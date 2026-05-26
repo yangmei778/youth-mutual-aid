@@ -1,0 +1,312 @@
+<template>
+  <div class="goods-detail page-container" v-loading="loading">
+    <template v-if="goods">
+      <!-- 图片轮播 -->
+      <el-card class="image-card" shadow="never" v-if="goods.images && goods.images.length">
+        <el-carousel v-if="goods.images.length > 1" height="400px" indicator-position="outside">
+          <el-carousel-item v-for="(img, i) in goods.images" :key="i">
+            <img :src="img" alt="" class="carousel-img" />
+          </el-carousel-item>
+        </el-carousel>
+        <img v-else :src="goods.images[0]" alt="" class="single-img" />
+      </el-card>
+
+      <el-row :gutter="20">
+        <!-- 物品信息 -->
+        <el-col :span="16">
+          <el-card class="info-card" shadow="never">
+            <h2 class="goods-title">{{ goods.title }}</h2>
+
+            <div class="info-row">
+              <el-tag :type="tagType(goods.exchangeType)" size="large">
+                {{ tagLabel(goods.exchangeType) }}
+              </el-tag>
+              <el-tag type="info" size="large">{{ goods.category }}</el-tag>
+            </div>
+
+            <el-divider />
+
+            <div class="info-section">
+              <h3>物品描述</h3>
+              <p class="description">{{ goods.description }}</p>
+            </div>
+
+            <div class="info-section">
+              <h3>新旧程度</h3>
+              <div class="condition-display">
+                <el-progress
+                  :percentage="goods.conditionLevel * 10"
+                  :stroke-width="18"
+                  :text-inside="true"
+                  :format="() => `${goods.conditionLevel} / 10`"
+                />
+              </div>
+            </div>
+
+            <div class="info-section" v-if="goods.exchangeType === 'exchange' && goods.expectedItems">
+              <h3>期望交换物品</h3>
+              <p>{{ goods.expectedItems }}</p>
+            </div>
+
+            <div class="info-section" v-if="goods.exchangeType === 'borrow' && goods.borrowDays">
+              <h3>可借用天数</h3>
+              <p>{{ goods.borrowDays }} 天</p>
+            </div>
+
+            <div class="info-section">
+              <span class="view-count">
+                <el-icon><View /></el-icon>
+                {{ goods.viewCount || 0 }} 次浏览
+              </span>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 发布者信息 & 操作 -->
+        <el-col :span="8">
+          <el-card class="publisher-card" shadow="never">
+            <div class="publisher-info">
+              <el-avatar :size="56" :src="goods.userAvatar">
+                {{ goods.userNickname?.charAt(0) || '?' }}
+              </el-avatar>
+              <div class="publisher-detail">
+                <router-link
+                  :to="`/user/${goods.userId}`"
+                  class="publisher-name"
+                >
+                  {{ goods.userNickname || '匿名用户' }}
+                </router-link>
+                <el-tag v-if="goods.userCreditLevel" type="warning" size="small" class="credit-badge">
+                  信用: {{ goods.userCreditLevel }}
+                </el-tag>
+              </div>
+            </div>
+
+            <el-divider />
+
+            <div class="action-buttons">
+              <el-button
+                type="primary"
+                size="large"
+                @click="openRequestDialog"
+                style="width: 100%"
+              >
+                {{ requestButtonText }}
+              </el-button>
+              <el-button size="large" @click="$router.push('/goods')" style="width: 100%">
+                返回列表
+              </el-button>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 申请对话框 -->
+      <el-dialog v-model="requestDialogVisible" :title="requestButtonText" width="480px">
+        <el-form ref="requestFormRef" :model="requestForm" :rules="requestRules">
+          <el-form-item label="申请留言" prop="requestMessage">
+            <el-input
+              v-model="requestForm.requestMessage"
+              type="textarea"
+              placeholder="请说明你的申请理由和联系方式"
+              :rows="4"
+              maxlength="300"
+              show-word-limit
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="requestDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitRequest" :loading="requesting">提交申请</el-button>
+        </template>
+      </el-dialog>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { goodsApi, mutualApi } from '@/api'
+import { ElMessage } from 'element-plus'
+import { View } from '@element-plus/icons-vue'
+
+const route = useRoute()
+
+const goods = ref(null)
+const loading = ref(false)
+
+const requestDialogVisible = ref(false)
+const requesting = ref(false)
+const requestFormRef = ref(null)
+
+const requestForm = reactive({
+  requestMessage: '',
+})
+
+const requestRules = {
+  requestMessage: [
+    { required: true, message: '请输入申请留言', trigger: 'blur' },
+  ],
+}
+
+const requestButtonText = computed(() => {
+  if (!goods.value) return '申请'
+  const map = { borrow: '申请借用', exchange: '申请交换', gift: '申请领取' }
+  return map[goods.value.exchangeType] || '申请'
+})
+
+function tagType(type) {
+  const map = { borrow: '', gift: 'success', exchange: 'warning' }
+  return map[type] || 'info'
+}
+
+function tagLabel(type) {
+  const map = { borrow: '借用', gift: '赠送', exchange: '交换' }
+  return map[type] || type
+}
+
+async function loadDetail() {
+  loading.value = true
+  try {
+    const res = await goodsApi.getDetail(route.params.id)
+    goods.value = res.data
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    loading.value = false
+  }
+}
+
+function openRequestDialog() {
+  requestForm.requestMessage = ''
+  requestDialogVisible.value = true
+}
+
+async function submitRequest() {
+  await requestFormRef.value?.validate()
+  requesting.value = true
+  try {
+    await mutualApi.createRequest({
+      type: 'goods',
+      participantId: goods.value.userId,
+      relatedId: goods.value.id,
+      requestMessage: requestForm.requestMessage,
+    })
+    ElMessage.success('申请已发送')
+    requestDialogVisible.value = false
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    requesting.value = false
+  }
+}
+
+onMounted(() => {
+  loadDetail()
+})
+</script>
+
+<style lang="scss" scoped>
+.image-card {
+  margin-bottom: 20px;
+
+  :deep(.el-card__body) {
+    padding: 0;
+  }
+}
+
+.carousel-img,
+.single-img {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+}
+
+.single-img {
+  border-radius: 4px;
+}
+
+.info-card {
+  .goods-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+}
+
+.info-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.info-section {
+  margin-bottom: 20px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: var(--text-regular);
+    line-height: 1.8;
+  }
+
+  .description {
+    white-space: pre-wrap;
+  }
+
+  .view-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+}
+
+.condition-display {
+  max-width: 400px;
+}
+
+.publisher-card {
+  .publisher-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .publisher-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .publisher-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-color, #409eff);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .credit-badge {
+    width: fit-content;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+</style>
