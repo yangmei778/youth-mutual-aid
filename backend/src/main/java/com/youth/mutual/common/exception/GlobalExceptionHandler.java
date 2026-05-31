@@ -101,6 +101,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 请求体解析异常 - JSON类型不匹配/格式错误
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public R<Void> handleHttpMessageNotReadableException(org.springframework.http.converter.HttpMessageNotReadableException e) {
+        String message = "请求数据格式错误";
+        Throwable cause = e.getCause();
+        if (cause != null && cause.getMessage() != null) {
+            // 提取更具体的错误信息
+            String causeMsg = cause.getMessage();
+            if (causeMsg.contains("Cannot deserialize value of type")) {
+                message = "请求数据类型不匹配：" + causeMsg.substring(causeMsg.indexOf('"') + 1, causeMsg.lastIndexOf('"'));
+            }
+        }
+        log.warn("请求体解析异常: {}", message, e);
+        return R.fail(ResultCode.PARAM_ERROR.getCode(), message);
+    }
+
+    /**
      * 其他异常
      */
     @ExceptionHandler(Exception.class)

@@ -47,34 +47,64 @@
         </el-tabs>
       </el-col>
     </el-row>
+
+    <!-- 发起互助对话框 -->
+    <el-dialog v-model="mutualDialogVisible" title="发起互助请求" width="480px">
+      <el-form :model="mutualForm" label-width="80px">
+        <el-form-item label="互助类型">
+          <el-select v-model="mutualForm.type">
+            <el-option label="技能交换" value="skill" />
+            <el-option label="物品共享" value="goods" />
+            <el-option label="临时搭伴" value="activity" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="留言">
+          <el-input v-model="mutualForm.requestMessage" type="textarea" :rows="3" placeholder="简要说明互助内容" maxlength="200" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="mutualDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitMutual" :loading="mutualSubmitting">发送请求</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { userApi, reviewApi, mutualApi, messageApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CreditBadge from '@/components/CreditBadge.vue'
 
 const route = useRoute()
+const userStore = useUserStore()
 const userId = route.params.id
 const user = ref({})
 const userPosts = ref([])
 const reviews = ref([])
 const activeTab = ref('posts')
+const mutualDialogVisible = ref(false)
+const mutualSubmitting = ref(false)
+const mutualForm = ref({
+  type: 'skill',
+  requestMessage: '',
+})
 
 onMounted(async () => {
   try {
     const [userRes, postsRes, reviewsRes] = await Promise.all([
       userApi.getUserDetail(userId),
       userApi.getUserPosts(userId, 1, 20),
-      reviewApi.getReceivedReviews({ pageNum: 1, pageSize: 20 }),
+      userApi.getUserReviews(userId, 1, 20),
     ])
-    user.value = userRes.data || {}
-    userPosts.value = postsRes.data?.records || []
-    reviews.value = (reviewsRes.data?.records || []).filter(r => r.revieweeId == userId)
-  } catch (e) { /* ignore */ }
+    user.value = userRes.data?.data || userRes.data || {}
+    userPosts.value = postsRes.data?.records || postsRes.data?.data?.records || []
+    reviews.value = reviewsRes.data?.records || reviewsRes.data?.data?.records || []
+  } catch (e) {
+    ElMessage.error('获取用户信息失败')
+  }
 })
 
 async function sendPrivateMsg() {
@@ -92,7 +122,30 @@ async function sendPrivateMsg() {
 }
 
 function initMutual() {
-  ElMessage.info('请到对应发布页面发起互助请求')
+  mutualForm.value = { type: 'skill', requestMessage: '' }
+  mutualDialogVisible.value = true
+}
+
+async function submitMutual() {
+  if (!mutualForm.value.requestMessage.trim()) {
+    ElMessage.warning('请填写留言')
+    return
+  }
+  mutualSubmitting.value = true
+  try {
+    await mutualApi.createRequest({
+      participantId: Number(userId),
+      type: mutualForm.value.type,
+      relatedId: null,
+      requestMessage: mutualForm.value.requestMessage,
+    })
+    ElMessage.success('互助请求已发送')
+    mutualDialogVisible.value = false
+  } catch (e) {
+    ElMessage.error('发送失败')
+  } finally {
+    mutualSubmitting.value = false
+  }
 }
 </script>
 

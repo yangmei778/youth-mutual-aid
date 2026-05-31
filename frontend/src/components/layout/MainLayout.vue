@@ -92,12 +92,11 @@ onUnmounted(() => {
 })
 const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
 const activeMenu = computed(() => {
-  const pathMap = {
-    '/skill': '/skill',
-    '/goods': '/goods',
-    '/activity': '/activity',
-  }
-  return pathMap[route.path] || '/home'
+  const path = route.path
+  if (path.startsWith('/skill')) return '/skill'
+  if (path.startsWith('/goods')) return '/goods'
+  if (path.startsWith('/activity')) return '/activity'
+  return '/home'
 })
 
 function handleCommand(command) {

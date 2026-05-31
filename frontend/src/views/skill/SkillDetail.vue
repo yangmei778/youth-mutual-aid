@@ -52,8 +52,8 @@
                     <div class="info-item">
                       <span class="info-label">支持线上</span>
                       <span class="info-value">
-                        <el-tag :type="skill.onlineSupport ? 'success' : 'info'" size="small">
-                          {{ skill.onlineSupport ? '是' : '否' }}
+                        <el-tag :type="skill.onlineSupport === 1 ? 'success' : 'info'" size="small">
+                          {{ skill.onlineSupport === 1 ? '是' : '否' }}
                         </el-tag>
                       </span>
                     </div>
@@ -72,9 +72,11 @@
               </div>
 
               <div class="action-bar">
-                <el-button type="primary" size="large" @click="showRequestDialog = true">
+                <!-- 发布者不能给自己发起交换请求 -->
+                <el-button v-if="!isPublisher" type="primary" size="large" @click="showRequestDialog = true">
                   发起交换请求
                 </el-button>
+                <el-tag v-else type="info" size="large" effect="plain">这是我发布的技能</el-tag>
                 <el-button size="large" @click="router.push('/skill')">
                   返回列表
                 </el-button>
@@ -140,14 +142,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { skillApi, mutualApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, View, Star } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
+
+// 判断当前用户是否为该技能的发布者，防止自己给自己发起交换请求
+const isPublisher = computed(() => {
+  return userStore.userInfo?.id === skill.value?.userId
+})
 
 const loading = ref(false)
 const skill = ref(null)

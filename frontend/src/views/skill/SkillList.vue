@@ -21,8 +21,13 @@
         <el-col :span="4">
           <el-select v-model="queryParams.type" placeholder="类型" clearable @change="handleSearch">
             <el-option label="全部" value="" />
-            <el-option label="我能教" value="teach" />
-            <el-option label="我想学" value="learn" />
+            <!--
+              筛选逻辑说明：
+              - "我想学" → 查 type=teach → 找到"能教"的人（搜索者想学，需要找到能教的人）
+              - "我能教" → 查 type=learn → 找到"想学"的人（搜索者能教，需要找到想学的人）
+            -->
+            <el-option label="我能教" value="learn" />
+            <el-option label="我想学" value="teach" />
           </el-select>
         </el-col>
         <el-col :span="5">
@@ -132,6 +137,9 @@ async function fetchList() {
   loading.value = true
   try {
     const params = { ...queryParams }
+    // 前端用 page，后端用 pageNum，映射参数名
+    params.pageNum = params.page
+    delete params.page
     // 移除空值参数
     Object.keys(params).forEach(key => {
       if (params[key] === '' || params[key] === null || params[key] === undefined) {

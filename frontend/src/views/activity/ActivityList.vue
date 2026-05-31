@@ -140,7 +140,7 @@ const loadList = async () => {
   loading.value = true
   try {
     const params = {
-      page: page.value,
+      pageNum: page.value,
       pageSize: pageSize.value,
     }
     if (searchKeyword.value) params.keyword = searchKeyword.value

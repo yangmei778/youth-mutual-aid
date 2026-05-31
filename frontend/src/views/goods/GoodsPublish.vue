@@ -175,6 +175,10 @@ async function handleSubmit() {
     if (data.exchangeType !== 'borrow') {
       delete data.borrowDays
     }
+    // images 数组转逗号分隔字符串（后端 images 字段是 VARCHAR）
+    if (Array.isArray(data.images)) {
+      data.images = data.images.join(',')
+    }
     await goodsApi.publish(data)
     ElMessage.success('发布成功')
     router.push('/goods')

@@ -109,7 +109,8 @@ async function handleSubmit() {
   await formRef.value?.validate()
   submitting.value = true
   try {
-    await skillApi.publish({ ...form })
+    const data = { ...form, onlineSupport: form.onlineSupport ? 1 : 0 }
+    await skillApi.publish(data)
     ElMessage.success('发布成功')
     router.push('/skill')
   } catch {

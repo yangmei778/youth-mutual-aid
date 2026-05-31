@@ -96,6 +96,9 @@
         <div class="action-bar" v-else-if="alreadyJoined">
           <el-button type="info" size="large" disabled>已报名</el-button>
         </div>
+        <div class="action-bar" v-else-if="isOrganizer">
+          <el-tag type="info" size="large" effect="plain">这是我发布的活动</el-tag>
+        </div>
       </template>
 
       <el-empty v-if="!loading && !activity" description="活动不存在" />
@@ -126,10 +129,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { activityApi } from '@/api'
 
 const route = useRoute()
+const userStore = useUserStore()
 
 const typeIconMap = {
   meal: '🍜',
@@ -187,9 +192,14 @@ const alreadyJoined = computed(() => {
   return activity.value.currentUserJoined === true
 })
 
+// 判断当前用户是否为活动组织者
+const isOrganizer = computed(() => {
+  return userStore.userInfo?.id === activity.value?.publisher?.id
+})
+
 const canJoin = computed(() => {
   if (!activity.value) return false
-  return activity.value.status === 'open' && !alreadyJoined.value
+  return activity.value.status === 'open' && !alreadyJoined.value && !isOrganizer.value
 })
 
 const joinDialogVisible = ref(false)

@@ -44,11 +44,6 @@ export const skillApi = {
     return request.post('/v1/skill/posts', data)
   },
 
-  /** 发起交换请求 */
-  sendRequest(data) {
-    return request.post('/v1/skill/requests', data)
-  },
-
   /** 获取技能匹配推荐 */
   getRecommendations(params) {
     return request.get('/v1/skill/recommendations', { params })
@@ -72,11 +67,6 @@ export const goodsApi = {
   /** 发布物品 */
   publish(data) {
     return request.post('/v1/goods/posts', data)
-  },
-
-  /** 申请借用/交换 */
-  apply(id, data) {
-    return request.post(`/v1/goods/posts/${id}/apply`, data)
   },
 }
 
@@ -164,11 +154,6 @@ export const userApi = {
     return request.get(`/v1/users/${id}`)
   },
 
-  /** 获取当前用户信息 */
-  getCurrentUser() {
-    return request.get('/v1/users/me')
-  },
-
   /** 更新个人资料 */
   updateProfile(data) {
     return request.put('/v1/users/profile', data)
@@ -192,15 +177,6 @@ export const userApi = {
   /** 获取用户收到的评价 */
   getUserReviews(id, pageNum = 1, pageSize = 10) {
     return request.get(`/v1/users/${id}/reviews`, { params: { pageNum, pageSize } })
-  },
-
-  /** 上传头像 */
-  uploadAvatar(file) {
-    const formData = new FormData()
-    formData.append('file', file)
-    return request.post('/v1/users/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
   },
 }
 

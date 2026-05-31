@@ -32,8 +32,16 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function fetchUserInfo() {
-    const res = await authApi.getUserInfo()
-    userInfo.value = res.data
+    try {
+      const res = await authApi.getUserInfo()
+      userInfo.value = res.data
+    } catch (e) {
+      // 获取用户信息失败，清除过期 token
+      userInfo.value = null
+      if (!token.value) return
+      // token 可能已过期，清除登录状态
+      logout()
+    }
   }
 
   function logout() {

@@ -137,7 +137,7 @@ async function loadList() {
   loading.value = true
   try {
     const params = {
-      page: pagination.page,
+      pageNum: pagination.page,
       pageSize: pagination.pageSize,
       ...filters,
     }

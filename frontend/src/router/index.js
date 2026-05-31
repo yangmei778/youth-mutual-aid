@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/store/user'
 
 const routes = [
   {
@@ -102,6 +103,12 @@ const routes = [
         component: () => import('@/views/credit/CreditCenter.vue'),
         meta: { title: '信用中心' },
       },
+      {
+        path: 'mutual/:id',
+        name: 'MutualDetail',
+        component: () => import('@/views/mutual/MutualDetail.vue'),
+        meta: { title: '互助详情' },
+      },
     ],
   },
   {
@@ -152,7 +159,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   document.title = `${to.meta.title || '青年同城互助平台'} - 互助青年`
 
@@ -161,9 +168,30 @@ router.beforeEach((to, from, next) => {
   if (!to.meta.noAuth && !token) {
     // 需要登录但未登录，跳转登录页
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return
   }
+
+  // 管理员路由校验
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    const userStore = useUserStore()
+    // 如果还没获取用户信息，先获取
+    if (!userStore.userInfo && token) {
+      try {
+        await userStore.fetchUserInfo()
+      } catch (e) {
+        // 获取失败，跳转登录
+        next({ name: 'Login', query: { redirect: to.fullPath } })
+        return
+      }
+    }
+    if (userStore.userInfo?.role !== 'ADMIN') {
+      // 非管理员，跳转首页
+      next({ name: 'Home' })
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

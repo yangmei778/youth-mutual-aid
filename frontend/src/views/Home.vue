@@ -57,43 +57,48 @@
     </el-row>
 
     <!-- Latest Skills Section -->
-    <div class="section" v-if="latestSkills.length">
-      <div class="section-header">
-        <h2>📚 最新技能</h2>
-        <el-button text type="primary" @click="$router.push('/skill')">查看全部</el-button>
-      </div>
-      <el-row :gutter="16">
-        <el-col :span="6" v-for="skill in latestSkills" :key="skill.id">
-          <el-card shadow="hover" class="item-card" @click="$router.push(`/skill/${skill.id}`)">
-            <div class="item-title">{{ skill.title }}</div>
-            <div class="item-meta">
-              <el-tag :type="skill.type === 'teach' ? 'success' : 'primary'" size="small">
-                {{ skill.type === 'teach' ? '能教' : '想学' }}
-              </el-tag>
-              <span v-if="skill.category" class="item-category">{{ skill.category }}</span>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+    <div class="section" v-loading="dataLoading">
+      <template v-if="!dataLoading">
+        <div v-if="latestSkills.length">
+          <div class="section-header">
+            <h2>📚 最新技能</h2>
+            <el-button text type="primary" @click="$router.push('/skill')">查看全部</el-button>
+          </div>
+          <el-row :gutter="16">
+            <el-col :span="6" v-for="skill in latestSkills" :key="skill.id">
+              <el-card shadow="hover" class="item-card" @click="$router.push(`/skill/${skill.id}`)">
+                <div class="item-title">{{ skill.title }}</div>
+                <div class="item-meta">
+                  <el-tag :type="skill.type === 'teach' ? 'success' : 'primary'" size="small">
+                    {{ skill.type === 'teach' ? '能教' : '想学' }}
+                  </el-tag>
+                  <span v-if="skill.category" class="item-category">{{ skill.category }}</span>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
 
-    <!-- Latest Activities Section -->
-    <div class="section" v-if="latestActivities.length">
-      <div class="section-header">
-        <h2>🎉 最新活动</h2>
-        <el-button text type="primary" @click="$router.push('/activity')">查看全部</el-button>
-      </div>
-      <el-row :gutter="16">
-        <el-col :span="8" v-for="activity in latestActivities" :key="activity.id">
-          <el-card shadow="hover" class="item-card" @click="$router.push(`/activity/${activity.id}`)">
-            <div class="item-title">{{ activity.title }}</div>
-            <div class="item-meta">
-              <span>{{ typeIcons[activity.type] || '🤝' }} {{ activity.location }}</span>
-              <span>{{ activity.currentMembers }}/{{ activity.maxMembers }}人</span>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+        <div v-if="latestActivities.length">
+          <div class="section-header">
+            <h2>🎉 最新活动</h2>
+            <el-button text type="primary" @click="$router.push('/activity')">查看全部</el-button>
+          </div>
+          <el-row :gutter="16">
+            <el-col :span="8" v-for="activity in latestActivities" :key="activity.id">
+              <el-card shadow="hover" class="item-card" @click="$router.push(`/activity/${activity.id}`)">
+                <div class="item-title">{{ activity.title }}</div>
+                <div class="item-meta">
+                  <span>{{ typeIcons[activity.type] || '🤝' }} {{ activity.location }}</span>
+                  <span>{{ activity.currentMembers }}/{{ activity.maxMembers }}人</span>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+
+        <el-empty v-if="!latestSkills.length && !latestActivities.length" description="暂无内容，快去发布吧！" />
+      </template>
     </div>
   </div>
 </template>
@@ -104,6 +109,7 @@ import { skillApi, activityApi } from '@/api'
 
 const latestSkills = ref([])
 const latestActivities = ref([])
+const dataLoading = ref(true)
 
 const typeIcons = {
   meal: '🍜',
@@ -113,15 +119,18 @@ const typeIcons = {
 }
 
 onMounted(async () => {
+  dataLoading.value = true
   try {
     const [skillRes, activityRes] = await Promise.all([
       skillApi.getList({ pageNum: 1, pageSize: 4 }),
       activityApi.getList({ pageNum: 1, pageSize: 3 }),
     ])
-    latestSkills.value = skillRes.data?.records || []
-    latestActivities.value = activityRes.data?.records || []
+    latestSkills.value = skillRes.data?.records || skillRes.data?.data?.records || []
+    latestActivities.value = activityRes.data?.records || activityRes.data?.data?.records || []
   } catch (e) {
     // 静默处理，首页可以无数据
+  } finally {
+    dataLoading.value = false
   }
 })
 </script>

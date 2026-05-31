@@ -2,13 +2,13 @@
   <div class="goods-detail page-container" v-loading="loading">
     <template v-if="goods">
       <!-- 图片轮播 -->
-      <el-card class="image-card" shadow="never" v-if="goods.images && goods.images.length">
-        <el-carousel v-if="goods.images.length > 1" height="400px" indicator-position="outside">
-          <el-carousel-item v-for="(img, i) in goods.images" :key="i">
+      <el-card class="image-card" shadow="never" v-if="imageList.length">
+        <el-carousel v-if="imageList.length > 1" height="400px" indicator-position="outside">
+          <el-carousel-item v-for="(img, i) in imageList" :key="i">
             <img :src="img" alt="" class="carousel-img" />
           </el-carousel-item>
         </el-carousel>
-        <img v-else :src="goods.images[0]" alt="" class="single-img" />
+        <img v-else :src="imageList[0]" alt="" class="single-img" />
       </el-card>
 
       <el-row :gutter="20">
@@ -85,7 +85,9 @@
             <el-divider />
 
             <div class="action-buttons">
+              <!-- 发布者不能申请自己的物品 -->
               <el-button
+                v-if="goods.userId !== userStore.userInfo?.id"
                 type="primary"
                 size="large"
                 @click="openRequestDialog"
@@ -93,6 +95,9 @@
               >
                 {{ requestButtonText }}
               </el-button>
+              <el-tag v-else type="info" size="large" effect="plain" style="width: 100%; text-align: center; justify-content: center;">
+                这是我发布的物品
+              </el-tag>
               <el-button size="large" @click="$router.push('/goods')" style="width: 100%">
                 返回列表
               </el-button>
@@ -127,11 +132,13 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { goodsApi, mutualApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { View } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const userStore = useUserStore()
 
 const goods = ref(null)
 const loading = ref(false)
@@ -154,6 +161,13 @@ const requestButtonText = computed(() => {
   if (!goods.value) return '申请'
   const map = { borrow: '申请借用', exchange: '申请交换', gift: '申请领取' }
   return map[goods.value.exchangeType] || '申请'
+})
+
+/** 后端 images 是逗号分隔字符串，解析为数组用于展示 */
+const imageList = computed(() => {
+  if (!goods.value?.images) return []
+  if (Array.isArray(goods.value.images)) return goods.value.images
+  return goods.value.images.split(',').filter(Boolean)
 })
 
 function tagType(type) {

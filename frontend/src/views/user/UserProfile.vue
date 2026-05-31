@@ -5,7 +5,11 @@
       <el-col :span="8">
         <el-card>
           <div class="profile-header">
-            <el-avatar :size="80" :src="userInfo.avatar">{{ userInfo.nickname?.charAt(0) || 'U' }}</el-avatar>
+            <div class="avatar-wrapper" @click="triggerAvatarUpload">
+              <el-avatar :size="80" :src="userInfo.avatar">{{ userInfo.nickname?.charAt(0) || 'U' }}</el-avatar>
+              <div class="avatar-overlay"><span>更换头像</span></div>
+            </div>
+            <input ref="avatarInput" type="file" accept="image/*" style="display: none" @change="handleAvatarChange" />
             <h3>{{ userInfo.nickname }}</h3>
             <p class="username">@{{ userInfo.username }}</p>
             <CreditBadge :score="userInfo.creditScore || 0" />
@@ -44,10 +48,11 @@
       <el-col :span="16">
         <el-tabs v-model="activeTab">
           <el-tab-pane label="我的发布" name="posts">
-            <el-empty v-if="myPosts.length === 0" description="暂无发布" />
+            <div v-if="postsLoading" v-loading="true" style="min-height: 200px" />
+            <el-empty v-else-if="myPosts.length === 0" description="暂无发布" />
             <el-row :gutter="12" v-else>
               <el-col :span="12" v-for="post in myPosts" :key="post.id">
-                <el-card shadow="hover" class="post-card" @click="$router.push(`/skill/${post.id}`)">
+                <el-card shadow="hover" class="post-card" @click="goToPost(post)">
                   <div class="post-title">{{ post.title }}</div>
                   <el-tag :type="post.type === 'teach' ? 'success' : 'primary'" size="small">
                     {{ post.type === 'teach' ? '能教' : '想学' }}
@@ -58,8 +63,18 @@
           </el-tab-pane>
 
           <el-tab-pane label="我的互助" name="mutual">
-            <el-empty v-if="myRecords.length === 0" description="暂无互助记录" />
-            <el-table :data="myRecords" v-else>
+            <div class="mutual-toolbar" v-if="myRecords.length > 0">
+              <el-select v-model="recordFilter" placeholder="按状态筛选" clearable style="width: 140px" @change="loadRecords">
+                <el-option label="全部" value="" />
+                <el-option label="待确认" value="pending" />
+                <el-option label="进行中" value="ongoing" />
+                <el-option label="已完成" value="completed" />
+                <el-option label="已取消" value="cancelled" />
+              </el-select>
+            </div>
+            <div v-if="recordsLoading" v-loading="true" style="min-height: 200px" />
+            <el-empty v-else-if="myRecords.length === 0" description="暂无互助记录" />
+            <el-table :data="myRecords" v-else stripe>
               <el-table-column prop="type" label="类型" width="100">
                 <template #default="{ row }">
                   {{ typeMap[row.type] || row.type }}
@@ -70,8 +85,15 @@
                   <el-tag :type="statusType[row.status]">{{ statusMap[row.status] }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="requestMessage" label="留言" />
+              <el-table-column prop="requestMessage" label="留言" show-overflow-tooltip />
               <el-table-column prop="createdAt" label="时间" width="170" />
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="$router.push(`/mutual/${row.id}`)">
+                    查看详情
+                  </el-button>
+                </template>
+              </el-table-column>
             </el-table>
           </el-tab-pane>
 
@@ -109,21 +131,27 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { userApi, skillApi, mutualApi } from '@/api'
+import { userApi, skillApi, mutualApi, uploadApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import CreditBadge from '@/components/CreditBadge.vue'
 
+const router = useRouter()
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo || {})
 const activeTab = ref('posts')
 const saving = ref(false)
+const postsLoading = ref(false)
+const recordsLoading = ref(false)
 const myPosts = ref([])
 const myRecords = ref([])
 const skillTags = ref([])
 const tagDialogVisible = ref(false)
 const tagType = ref('teach')
 const newTagName = ref('')
+const recordFilter = ref('')
+const avatarInput = ref(null)
 
 const typeMap = { skill: '技能交换', goods: '物品共享', activity: '临时搭伴' }
 const statusMap = { pending: '待确认', ongoing: '进行中', completed: '已完成', cancelled: '已取消' }
@@ -153,16 +181,37 @@ onMounted(async () => {
 })
 
 async function loadData() {
+  postsLoading.value = true
+  recordsLoading.value = true
   try {
     const [postsRes, recordsRes, tagsRes] = await Promise.all([
-      userApi.getUserPosts(userInfo.value.id, 1, 20),
-      mutualApi.getMyRecords({ pageNum: 1, pageSize: 20 }),
-      userApi.getUserSkillTags ? userApi.getUserSkillTags(userInfo.value.id) : skillApi.getList({ pageNum: 1, pageSize: 100 }).then(() => []),
+      userApi.getUserPosts(userInfo.value.id, 1, 20).catch(() => ({ data: { records: [] } })),
+      mutualApi.getMyRecords({ pageNum: 1, pageSize: 20, status: recordFilter.value || undefined }).catch(() => ({ data: { records: [] } })),
+      userApi.getUserSkillTags(userInfo.value.id).catch(() => ({ data: [] })),
     ])
-    myPosts.value = postsRes.data?.records || []
-    myRecords.value = recordsRes.data?.records || []
-    skillTags.value = tagsRes.data || []
-  } catch (e) { /* ignore */ }
+    myPosts.value = postsRes.data?.records || postsRes.data?.data?.records || []
+    myRecords.value = recordsRes.data?.records || recordsRes.data?.data?.records || []
+    skillTags.value = tagsRes.data || tagsRes.data?.data || []
+  } catch (e) {
+    ElMessage.error('数据加载失败')
+  } finally {
+    postsLoading.value = false
+    recordsLoading.value = false
+  }
+}
+
+async function loadRecords() {
+  recordsLoading.value = true
+  try {
+    const params = { pageNum: 1, pageSize: 20 }
+    if (recordFilter.value) params.status = recordFilter.value
+    const res = await mutualApi.getMyRecords(params)
+    myRecords.value = res.data?.records || res.data?.data?.records || []
+  } catch (e) {
+    ElMessage.error('加载互助记录失败')
+  } finally {
+    recordsLoading.value = false
+  }
 }
 
 async function saveProfile() {
@@ -171,8 +220,49 @@ async function saveProfile() {
     await userApi.updateProfile(editForm.value)
     await userStore.fetchUserInfo()
     ElMessage.success('保存成功')
-  } catch (e) { /* ignore */ }
-  saving.value = false
+  } catch (e) {
+    ElMessage.error('保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+function triggerAvatarUpload() {
+  avatarInput.value?.click()
+}
+
+async function handleAvatarChange(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('头像文件不能超过 5MB')
+    return
+  }
+  try {
+    // 先通过通用上传接口上传文件
+    const uploadRes = await uploadApi.uploadImage(file)
+    const avatarUrl = uploadRes.data?.data || uploadRes.data || ''
+    // 再更新个人资料中的头像
+    await userApi.updateProfile({ avatar: avatarUrl })
+    await userStore.fetchUserInfo()
+    ElMessage.success('头像更新成功')
+  } catch (e) {
+    ElMessage.error('头像上传失败')
+  }
+  // 清空 input 以允许重复选择同一文件
+  e.target.value = ''
+}
+
+function goToPost(post) {
+  // 根据 post 来源判断跳转（由于后端只返回 skill 类型，暂时都跳转 skill 详情）
+  // 如果后续支持 goods/activity 类型，可根据 post.postType 区分
+  if (post.postType === 'goods') {
+    router.push(`/goods/${post.id}`)
+  } else if (post.postType === 'activity') {
+    router.push(`/activity/${post.id}`)
+  } else {
+    router.push(`/skill/${post.id}`)
+  }
 }
 
 function addTag(type) {
@@ -197,7 +287,9 @@ async function saveTags() {
   try {
     await userApi.updateSkillTags(skillTags.value)
     ElMessage.success('标签已更新')
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    ElMessage.error('标签更新失败')
+  }
 }
 </script>
 
@@ -205,6 +297,33 @@ async function saveTags() {
 .profile-header {
   text-align: center;
   padding: 20px 0;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.avatar-wrapper:hover .avatar-overlay {
+  opacity: 1;
 }
 
 .profile-header h3 {
@@ -225,6 +344,12 @@ async function saveTags() {
 .post-title {
   font-weight: 500;
   margin-bottom: 8px;
+}
+
+.mutual-toolbar {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .tags-section h4 {

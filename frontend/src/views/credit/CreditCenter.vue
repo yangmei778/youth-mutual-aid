@@ -5,13 +5,31 @@
       <div class="score-display">
         <div class="score-number">{{ creditInfo.score || 0 }}</div>
         <div class="score-level">
-          <el-tag :type="creditLevel.type" size="large" effect="dark">{{ creditLevel.label }}</el-tag>
+          <el-tag :type="creditLevel.type" size="large" effect="dark">
+            {{ creditLevel.badge }} {{ creditLevel.label }}
+          </el-tag>
         </div>
         <div class="score-progress">
-          <span class="progress-label">距离下一等级还需 {{ needScore }} 分</span>
+          <span class="progress-label">{{ progressLabel }}</span>
           <el-progress :percentage="progressPercent" :stroke-width="12" :color="progressColor" />
         </div>
       </div>
+    </el-card>
+
+    <!-- 信用等级说明 -->
+    <el-card class="level-card" shadow="hover">
+      <template #header>
+        <span>信用等级说明</span>
+      </template>
+      <el-row :gutter="12">
+        <el-col :span="4" v-for="level in levelDescs" :key="level.name">
+          <div class="level-item" :class="{ active: creditInfo.score >= level.min }">
+            <div class="level-badge">{{ level.badge }}</div>
+            <div class="level-name">{{ level.name }}</div>
+            <div class="level-range">{{ level.min }}+分</div>
+          </div>
+        </el-col>
+      </el-row>
     </el-card>
 
     <!-- 信用变动记录 -->
@@ -48,36 +66,49 @@ const creditInfo = ref({ score: 0, level: '' })
 const creditLogs = ref([])
 const logsLoading = ref(false)
 
+// 统一等级体系（与 CreditBadge.vue 和 store 一致）
+const levelDescs = [
+  { name: '新手', badge: '🌱', min: 0, color: '#67C23A' },
+  { name: '铜牌', badge: '🥉', min: 21, color: '#E6A23C' },
+  { name: '银牌', badge: '🥈', min: 51, color: '#909399' },
+  { name: '金牌', badge: '🥇', min: 101, color: '#F5A623' },
+  { name: '钻石', badge: '💎', min: 201, color: '#9B59B6' },
+]
+
 const creditLevel = computed(() => {
   const s = creditInfo.value.score || 0
-  if (s >= 90) return { label: '优秀', type: 'success' }
-  if (s >= 70) return { label: '良好', type: '' }
-  if (s >= 50) return { label: '一般', type: 'warning' }
-  return { label: '待提升', type: 'danger' }
+  if (s >= 201) return { label: '钻石', badge: '💎', type: 'danger' }
+  if (s >= 101) return { label: '金牌', badge: '🥇', type: 'warning' }
+  if (s >= 51) return { label: '银牌', badge: '🥈', type: '' }
+  if (s >= 21) return { label: '铜牌', badge: '🥉', type: 'success' }
+  return { label: '新手', badge: '🌱', type: 'info' }
 })
 
-const needScore = computed(() => {
+const progressLabel = computed(() => {
   const s = creditInfo.value.score || 0
-  if (s >= 90) return 0
-  if (s >= 70) return 90 - s
-  if (s >= 50) return 70 - s
-  return 50 - s
+  if (s >= 201) return '已达最高等级'
+  if (s >= 101) return `距离钻石还需 ${201 - s} 分`
+  if (s >= 51) return `距离金牌还需 ${101 - s} 分`
+  if (s >= 21) return `距离银牌还需 ${51 - s} 分`
+  return `距离铜牌还需 ${21 - s} 分`
 })
 
 const progressPercent = computed(() => {
   const s = creditInfo.value.score || 0
-  if (s >= 90) return 100
-  if (s >= 70) return ((s - 70) / 20) * 100
-  if (s >= 50) return ((s - 50) / 20) * 100
-  return (s / 50) * 100
+  if (s >= 201) return 100
+  if (s >= 101) return ((s - 101) / 100) * 100
+  if (s >= 51) return ((s - 51) / 50) * 100
+  if (s >= 21) return ((s - 21) / 30) * 100
+  return (s / 21) * 100
 })
 
 const progressColor = computed(() => {
   const s = creditInfo.value.score || 0
-  if (s >= 90) return '#67C23A'
-  if (s >= 70) return '#409EFF'
-  if (s >= 50) return '#E6A23C'
-  return '#F56C6C'
+  if (s >= 201) return '#9B59B6'
+  if (s >= 101) return '#F5A623'
+  if (s >= 51) return '#909399'
+  if (s >= 21) return '#E6A23C'
+  return '#67C23A'
 })
 
 async function fetchCreditInfo() {
@@ -93,7 +124,7 @@ async function fetchCreditLogs() {
   logsLoading.value = true
   try {
     const res = await creditApi.getCreditLogs({ page: 1, size: 20 })
-    creditLogs.value = res.data?.data?.records || res.data?.data || []
+    creditLogs.value = res.data?.data?.records || res.data?.data || res.data?.records || []
   } catch (e) {
     // ignore
   } finally {
@@ -139,6 +170,36 @@ onMounted(() => {
   font-size: 14px;
   color: #909399;
   margin-bottom: 8px;
+}
+
+.level-card {
+  margin-bottom: 20px;
+}
+
+.level-item {
+  text-align: center;
+  padding: 12px 0;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.level-item.active {
+  background: #f0f9eb;
+}
+
+.level-badge {
+  font-size: 28px;
+}
+
+.level-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 4px 0;
+}
+
+.level-range {
+  font-size: 12px;
+  color: #909399;
 }
 
 .log-card {
