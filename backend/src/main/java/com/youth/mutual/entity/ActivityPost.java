@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 活动发布实体
@@ -44,4 +45,8 @@ public class ActivityPost {
     /** 发布者信用分（非数据库字段，列表展示用） */
     @TableField(exist = false)
     private Integer creditScore;
+
+    /** 报名成员列表（非数据库字段，详情展示用） */
+    @TableField(exist = false)
+    private List<ActivityMember> members;
 }

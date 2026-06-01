@@ -95,9 +95,25 @@
               >
                 {{ requestButtonText }}
               </el-button>
-              <el-tag v-else type="info" size="large" effect="plain" style="width: 100%; text-align: center; justify-content: center;">
-                这是我发布的物品
-              </el-tag>
+              <el-button
+                v-if="goods.userId !== userStore.userInfo?.id"
+                size="large"
+                @click="router.push(`/message?chat=${goods.userId}`)"
+                style="width: 100%"
+              >
+                <el-icon><ChatDotRound /></el-icon> 联系TA
+              </el-button>
+              <template v-if="goods.userId === userStore.userInfo?.id">
+                <el-tag type="info" size="large" effect="plain" style="width:100%;text-align:center;justify-content:center;">
+                  这是我发布的物品
+                </el-tag>
+                <el-button size="large" type="danger" plain style="width:100%" @click="handleOffline" :loading="offlining">
+                  下架物品
+                </el-button>
+                <el-button size="large" type="danger" style="width:100%" @click="handleDelete" :loading="deleting">
+                  删除物品
+                </el-button>
+              </template>
               <el-button size="large" @click="$router.push('/goods')" style="width: 100%">
                 返回列表
               </el-button>
@@ -131,13 +147,14 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { goodsApi, mutualApi } from '@/api'
-import { ElMessage } from 'element-plus'
-import { View } from '@element-plus/icons-vue'
+import { goodsApi, mutualApi, reportApi } from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { View, ChatDotRound } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const goods = ref(null)
@@ -214,6 +231,28 @@ async function submitRequest() {
   } finally {
     requesting.value = false
   }
+}
+
+const offlining = ref(false)
+async function handleOffline() {
+  try { await ElMessageBox.confirm('确定要下架这个物品吗？下架后其他用户将无法看到。', '确认下架', { type: 'warning' }) }
+  catch { return }
+  offlining.value = true
+  try {
+    await goodsApi.offline(goods.value.id)
+    ElMessage.success('物品已下架')
+    router.push('/goods')
+  } catch { /* error handled by interceptor */ }
+  finally { offlining.value = false }
+}
+
+const deleting = ref(false)
+async function handleDelete() {
+  try { await ElMessageBox.confirm('确定要永久删除这个物品吗？此操作不可恢复。', '确认删除', { type: 'error', confirmButtonText: '删除' }) }
+  catch { return }
+  deleting.value = true
+  try { await goodsApi.deleteGoods(goods.value.id); ElMessage.success('已删除'); router.push('/goods') }
+  catch { /* error handled */ } finally { deleting.value = false }
 }
 
 onMounted(() => {

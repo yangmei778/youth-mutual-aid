@@ -55,4 +55,12 @@ public class GoodsController {
         goodsService.offlineGoods(userId, id);
         return R.ok();
     }
+
+    @Operation(summary = "删除物品（仅发布者）")
+    @DeleteMapping("/posts/{id}")
+    public R<Void> deleteGoods(@PathVariable Long id) {
+        Long userId = userContext.getRequiredUserId();
+        goodsService.deleteGoods(userId, id);
+        return R.ok();
+    }
 }

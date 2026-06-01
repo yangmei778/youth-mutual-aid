@@ -148,6 +148,14 @@ public class SkillServiceImpl extends ServiceImpl<SkillPostMapper, SkillPost> im
         skillPostMapper.updateById(post);
     }
 
+    @Override
+    public void deleteSkill(Long userId, Long skillId) {
+        SkillPost post = skillPostMapper.selectById(skillId);
+        if (post == null) throw new BusinessException(ResultCode.SKILL_POST_NOT_FOUND);
+        if (!post.getUserId().equals(userId)) throw new BusinessException(ResultCode.ACCESS_DENIED);
+        skillPostMapper.deleteById(skillId);
+    }
+
     private List<Long> getUserIdsByCity(String city) {
         List<User> users = userMapper.selectList(
                 new LambdaQueryWrapper<User>().eq(User::getCity, city)

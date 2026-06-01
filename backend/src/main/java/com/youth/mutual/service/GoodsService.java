@@ -19,4 +19,7 @@ public interface GoodsService {
 
     /** 下架物品 */
     void offlineGoods(Long userId, Long goodsId);
+
+    /** 删除物品（仅发布者） */
+    void deleteGoods(Long userId, Long goodsId);
 }

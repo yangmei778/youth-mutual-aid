@@ -140,6 +140,18 @@ const routes = [
         component: () => import('@/views/admin/CreditManage.vue'),
         meta: { title: '信用管理' },
       },
+      {
+        path: 'reports',
+        name: 'AdminReports',
+        component: () => import('@/views/admin/ReportManage.vue'),
+        meta: { title: '举报管理' },
+      },
+      {
+        path: 'config',
+        name: 'AdminConfig',
+        component: () => import('@/views/admin/SystemConfig.vue'),
+        meta: { title: '系统配置' },
+      },
     ],
   },
   {

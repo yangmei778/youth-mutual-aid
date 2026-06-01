@@ -70,4 +70,12 @@ public class SkillController {
         skillService.offlineSkill(userId, id);
         return R.ok();
     }
+
+    @Operation(summary = "删除技能（仅发布者）")
+    @DeleteMapping("/posts/{id}")
+    public R<Void> deleteSkill(@PathVariable Long id) {
+        Long userId = userContext.getRequiredUserId();
+        skillService.deleteSkill(userId, id);
+        return R.ok();
+    }
 }

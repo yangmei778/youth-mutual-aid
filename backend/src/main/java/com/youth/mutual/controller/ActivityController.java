@@ -62,4 +62,28 @@ public class ActivityController {
         activityService.cancelActivity(userId, id);
         return R.ok();
     }
+
+    @Operation(summary = "删除活动（仅发布者）")
+    @DeleteMapping("/posts/{id}")
+    public R<Void> deleteActivity(@PathVariable Long id) {
+        Long userId = userContext.getRequiredUserId();
+        activityService.deleteActivity(userId, id);
+        return R.ok();
+    }
+
+    @Operation(summary = "通过报名申请")
+    @PutMapping("/posts/{postId}/members/{memberId}/approve")
+    public R<Void> approveMember(@PathVariable Long postId, @PathVariable Long memberId) {
+        Long userId = userContext.getRequiredUserId();
+        activityService.approveMember(userId, memberId);
+        return R.ok();
+    }
+
+    @Operation(summary = "拒绝报名申请")
+    @PutMapping("/posts/{postId}/members/{memberId}/reject")
+    public R<Void> rejectMember(@PathVariable Long postId, @PathVariable Long memberId) {
+        Long userId = userContext.getRequiredUserId();
+        activityService.rejectMember(userId, memberId);
+        return R.ok();
+    }
 }

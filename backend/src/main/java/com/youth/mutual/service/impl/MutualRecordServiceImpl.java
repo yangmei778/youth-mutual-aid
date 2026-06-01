@@ -61,9 +61,12 @@ public class MutualRecordServiceImpl extends ServiceImpl<MutualRecordMapper, Mut
         mutualRecordMapper.insert(record);
 
         // 通知参与人有新的互助请求
+        String notifyContent = "您收到一条" + getTypeName(dto.getType()) + "互助请求";
+        if (dto.getRequestMessage() != null && !dto.getRequestMessage().isBlank()) {
+            notifyContent += "：" + dto.getRequestMessage();
+        }
         messageService.createNotification(dto.getParticipantId(),
-                "收到互助请求",
-                "您收到一条" + getTypeName(dto.getType()) + "互助请求",
+                "收到互助请求", notifyContent,
                 "mutual_request", record.getId());
 
         return record.getId();
@@ -109,6 +112,12 @@ public class MutualRecordServiceImpl extends ServiceImpl<MutualRecordMapper, Mut
 
         record.setStatus("cancelled");
         mutualRecordMapper.updateById(record);
+
+        // 通知发起人请求被拒绝
+        messageService.createNotification(record.getInitiatorId(),
+                "互助请求被拒绝",
+                "您的" + getTypeName(record.getType()) + "互助请求已被拒绝",
+                "mutual_reject", record.getId());
     }
 
     @Override
@@ -170,6 +179,14 @@ public class MutualRecordServiceImpl extends ServiceImpl<MutualRecordMapper, Mut
 
         record.setStatus("cancelled");
         mutualRecordMapper.updateById(record);
+
+        // 通知对方互助已被取消
+        Long otherId = record.getInitiatorId().equals(userId)
+                ? record.getParticipantId() : record.getInitiatorId();
+        messageService.createNotification(otherId,
+                "互助已取消",
+                "对方取消了" + getTypeName(record.getType()) + "互助",
+                "mutual_cancel", record.getId());
     }
 
     @Override

@@ -29,4 +29,13 @@ public interface MessageService {
 
     /** 创建系统通知 */
     void createNotification(Long userId, String title, String content, String type, Long relatedId);
+
+    /** 获取会话列表（按对话对象分组） */
+    java.util.List<java.util.Map<String, Object>> getConversations(Long userId);
+
+    /** 标记单条私信已读 */
+    void markMessageRead(Long userId, Long messageId);
+
+    /** 标记某会话全部已读 */
+    void markAllMessagesRead(Long userId, Long targetUserId);
 }

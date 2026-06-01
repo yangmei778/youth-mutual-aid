@@ -87,6 +87,14 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsPostMapper, GoodsPost> im
         goodsPostMapper.updateById(post);
     }
 
+    @Override
+    public void deleteGoods(Long userId, Long goodsId) {
+        GoodsPost post = goodsPostMapper.selectById(goodsId);
+        if (post == null) throw new BusinessException(ResultCode.GOODS_POST_NOT_FOUND);
+        if (!post.getUserId().equals(userId)) throw new BusinessException(ResultCode.ACCESS_DENIED);
+        goodsPostMapper.deleteById(goodsId);
+    }
+
     /**
      * 批量填充发布者信息（昵称、头像、信用分）
      */

@@ -22,4 +22,13 @@ public interface ActivityService {
 
     /** 取消活动 */
     void cancelActivity(Long userId, Long activityId);
+
+    /** 通过报名申请 */
+    void approveMember(Long userId, Long memberId);
+
+    /** 拒绝报名申请 */
+    void rejectMember(Long userId, Long memberId);
+
+    /** 删除活动（仅发布者） */
+    void deleteActivity(Long userId, Long activityId);
 }

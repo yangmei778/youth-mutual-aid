@@ -21,4 +21,12 @@ public class Message {
     private Integer isRead;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+
+    /** 发送者昵称（非数据库字段） */
+    @TableField(exist = false)
+    private String senderName;
+
+    /** 发送者头像（非数据库字段） */
+    @TableField(exist = false)
+    private String senderAvatar;
 }

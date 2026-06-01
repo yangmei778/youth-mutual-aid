@@ -25,4 +25,7 @@ public interface SkillService {
 
     /** 下架技能 */
     void offlineSkill(Long userId, Long skillId);
+
+    /** 删除技能（仅发布者） */
+    void deleteSkill(Long userId, Long skillId);
 }

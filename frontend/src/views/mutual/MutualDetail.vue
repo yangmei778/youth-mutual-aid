@@ -6,9 +6,25 @@
       <template v-if="record">
         <!-- 状态横幅 -->
         <div class="status-banner" :class="`status-${record.status}`">
-          <span class="status-icon">{{ statusIcon }}</span>
+          <span class="status-icon"><el-icon :size="24"><component :is="statusIcon" /></el-icon></span>
           <span class="status-text">{{ statusMap[record.status] }}</span>
         </div>
+
+        <!-- 进度时间线 -->
+        <div class="progress-timeline" v-if="record.status !== 'cancelled'">
+          <el-steps :active="activeStep" :process-status="stepStatus" finish-status="success" align-center>
+            <el-step title="发起请求" :description="formatTime(record.createdAt)" />
+            <el-step title="对方接受" :description="formatTime(record.startTime)" />
+            <el-step title="进行中" :description="stepDesc.ongoing" />
+            <el-step title="双方确认" :description="stepDesc.confirmed" />
+            <el-step title="互评完成" :description="stepDesc.reviewed" />
+          </el-steps>
+        </div>
+        <div v-else class="cancelled-notice">
+          <el-result icon="error" title="该互助已取消" :sub-title="`取消时间：${formatTime(record.updatedAt)}`" />
+        </div>
+
+        <el-divider />
 
         <!-- 基本信息 -->
         <el-descriptions :column="2" border class="info-section">
@@ -103,6 +119,7 @@ import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { mutualApi, reviewApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Clock, Connection, CircleCheck, CircleClose, QuestionFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -123,9 +140,54 @@ const typeMap = { skill: '技能交换', goods: '物品共享', activity: '临�
 const statusMap = { pending: '待确认', ongoing: '进行中', completed: '已完成', cancelled: '已取消' }
 const statusType = { pending: 'warning', ongoing: 'primary', completed: 'success', cancelled: 'info' }
 
+// 进度步骤计算
+const activeStep = computed(() => {
+  if (!record.value) return 0
+  const s = record.value.status
+  if (s === 'pending') return 0
+  if (s === 'ongoing') return 2
+  if (s === 'completed') {
+    // 如果有一方已评价，进入步骤4；否则步骤3
+    return (myReview.value || otherReview.value) ? 4 : 3
+  }
+  return 0
+})
+
+const stepStatus = computed(() => {
+  if (!record.value) return 'wait'
+  if (record.value.status === 'cancelled') return 'error'
+  return 'process'
+})
+
+const stepDesc = computed(() => {
+  if (!record.value) return {}
+  const r = record.value
+  return {
+    ongoing: r.startTime ? '互助已开始' : '等待对方响应',
+    confirmed: r.initiatorConfirmed && r.participantConfirmed
+      ? '双方均已确认'
+      : r.initiatorConfirmed || r.participantConfirmed
+        ? '一方已确认'
+        : '等待确认',
+    reviewed: (myReview.value || otherReview.value) ? '已评价' : '等待评价',
+  }
+})
+
+// 格式化时间显示
+function formatTime(time) {
+  if (!time) return '—'
+  const d = new Date(time)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${day} ${h}:${min}`
+}
+
 const statusIcon = computed(() => {
-  const map = { pending: '⏳', ongoing: '🤝', completed: '✅', cancelled: '❌' }
-  return map[record.value?.status] || '❓'
+  const map = { pending: Clock, ongoing: Connection, completed: CircleCheck, cancelled: CircleClose }
+  return map[record.value?.status] || QuestionFilled
 })
 
 const currentUserId = computed(() => userStore.userInfo?.id)
@@ -299,6 +361,18 @@ onMounted(async () => {
 
 .status-icon {
   font-size: 24px;
+}
+
+/* ---- 进度时间线 ---- */
+.progress-timeline {
+  margin-bottom: 8px;
+  padding: 20px 16px;
+  background: #fafbfc;
+  border-radius: var(--radius-md);
+}
+
+.cancelled-notice {
+  margin-bottom: 16px;
 }
 
 .info-section {

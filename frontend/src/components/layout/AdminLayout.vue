@@ -3,7 +3,7 @@
     <el-container>
       <el-aside width="220px" class="admin-aside">
         <div class="admin-logo">
-          <span>🤝</span>
+          <el-icon :size="20"><Connection /></el-icon>
           <span>管理后台</span>
         </div>
         <el-menu
@@ -29,6 +29,14 @@
             <el-icon><Trophy /></el-icon>
             <span>信用管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/reports">
+            <el-icon><WarningFilled /></el-icon>
+            <span>举报管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/config">
+            <el-icon><Setting /></el-icon>
+            <span>系统配置</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -47,7 +55,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { DataAnalysis, User, DocumentChecked, Trophy } from '@element-plus/icons-vue'
+import { DataAnalysis, User, DocumentChecked, Trophy, Connection, WarningFilled, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)

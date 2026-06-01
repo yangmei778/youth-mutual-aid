@@ -13,7 +13,7 @@ html, body {
     sans-serif;
   font-size: 14px;
   color: #333;
-  background-color: #f5f7fa;
+  background-color: #f5f6f8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -28,6 +28,20 @@ a {
   text-decoration: none;
 }
 
+// 页面切换动画
+.router-view-enter-active,
+.router-view-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.router-view-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.router-view-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 // 滚动条美化
 ::-webkit-scrollbar {
   width: 6px;
@@ -35,8 +49,12 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #c0c4cc;
+  background-color: #d0d5dd;
   border-radius: 3px;
+
+  &:hover {
+    background-color: var(--primary-color);
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -57,6 +75,29 @@ a {
   --text-regular: #606266;
   --text-secondary: #909399;
   --text-placeholder: #c0c4cc;
+
+  // 模块主题色（用于各模块入口的视觉区分）
+  --skill-color: #409eff;
+  --goods-color: #67c23a;
+  --activity-color: #e6a23c;
+
+  // 阴影层级
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.10);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+
+  // 过渡时间
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // 圆角
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 }
 
 // 通用类
@@ -64,13 +105,31 @@ a {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  animation: pageEnter 0.4s ease-out;
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// 全局卡片美化
+.el-card {
+  border: 1px solid #edf0f4 !important;
+  border-radius: var(--radius-lg) !important;
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+
+  &.is-hover-shadow:hover,
+  &.is-always-shadow {
+    box-shadow: var(--shadow-card) !important;
+  }
 }
 
 .card-box {
   background: var(--card-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 .flex-center {

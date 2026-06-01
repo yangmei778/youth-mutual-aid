@@ -76,9 +76,23 @@
                 <el-button v-if="!isPublisher" type="primary" size="large" @click="showRequestDialog = true">
                   发起交换请求
                 </el-button>
-                <el-tag v-else type="info" size="large" effect="plain">这是我发布的技能</el-tag>
+                <el-button v-if="!isPublisher" size="large" @click="contactPublisher">
+                  <el-icon><ChatDotRound /></el-icon> 联系TA
+                </el-button>
+                <template v-if="isPublisher">
+                  <el-tag type="info" size="large" effect="plain">这是我发布的技能</el-tag>
+                  <el-button size="large" type="danger" plain @click="handleOffline" :loading="offlining">
+                    下架技能
+                  </el-button>
+                  <el-button size="large" type="danger" @click="handleDelete" :loading="deleting">
+                    删除技能
+                  </el-button>
+                </template>
                 <el-button size="large" @click="router.push('/skill')">
                   返回列表
+                </el-button>
+                <el-button text type="danger" size="small" @click="openReportDialog" v-if="!isPublisher">
+                  举报
                 </el-button>
               </div>
             </el-card>
@@ -110,6 +124,27 @@
         </el-row>
       </template>
     </div>
+
+    <!-- 举报对话框 -->
+    <el-dialog v-model="reportDialogVisible" title="举报内容" width="460px" destroy-on-close>
+      <el-form :model="reportForm">
+        <el-form-item label="举报原因">
+          <el-select v-model="reportForm.reason" placeholder="请选择">
+            <el-option label="虚假信息" value="虚假信息" />
+            <el-option label="违规内容" value="违规内容" />
+            <el-option label="欺诈行为" value="欺诈行为" />
+            <el-option label="其他" value="其他" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="详细描述">
+          <el-input v-model="reportForm.description" type="textarea" :rows="3" maxlength="300" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reportDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="reportSubmitting" @click="handleReport">提交举报</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 交换请求对话框 -->
     <el-dialog
@@ -145,9 +180,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { skillApi, mutualApi } from '@/api'
-import { ElMessage } from 'element-plus'
-import { ArrowLeft, View, Star } from '@element-plus/icons-vue'
+import { skillApi, mutualApi, reportApi } from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowLeft, View, Star, ChatDotRound } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -207,6 +242,65 @@ async function handleSendRequest() {
   } finally {
     requesting.value = false
   }
+}
+
+// ====== 举报 ======
+const reportDialogVisible = ref(false)
+const reportSubmitting = ref(false)
+const reportForm = reactive({ reason: '违规内容', description: '' })
+
+function openReportDialog() {
+  reportForm.reason = '违规内容'
+  reportForm.description = ''
+  reportDialogVisible.value = true
+}
+
+async function handleReport() {
+  if (!reportForm.reason) { ElMessage.warning('请选择举报原因'); return }
+  reportSubmitting.value = true
+  try {
+    await reportApi.submitReport({
+      targetType: 'skill',
+      targetId: skill.value.id,
+      reason: reportForm.reason,
+      description: reportForm.description,
+    })
+    ElMessage.success('举报已提交，我们会尽快处理')
+    reportDialogVisible.value = false
+  } catch { /* error handled by interceptor */ }
+  finally { reportSubmitting.value = false }
+}
+
+// ====== 下架技能 ======
+const offlining = ref(false)
+async function handleOffline() {
+  try { await ElMessageBox.confirm('确定要下架这个技能吗？下架后其他用户将无法看到。', '确认下架', { type: 'warning' }) }
+  catch { return }
+  offlining.value = true
+  try {
+    await skillApi.offline(skill.value.id)
+    ElMessage.success('技能已下架')
+    router.push('/skill')
+  } catch { /* error handled by interceptor */ }
+  finally { offlining.value = false }
+}
+
+function contactPublisher() {
+  router.push(`/message?chat=${skill.value.userId}`)
+}
+
+// ====== 删除技能 ======
+const deleting = ref(false)
+async function handleDelete() {
+  try { await ElMessageBox.confirm('确定要永久删除这个技能吗？此操作不可恢复。', '确认删除', { type: 'error', confirmButtonText: '删除' }) }
+  catch { return }
+  deleting.value = true
+  try {
+    await skillApi.deleteSkill(skill.value.id)
+    ElMessage.success('技能已删除')
+    router.push('/skill')
+  } catch { /* error handled by interceptor */ }
+  finally { deleting.value = false }
 }
 
 onMounted(() => {

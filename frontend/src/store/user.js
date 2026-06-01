@@ -8,17 +8,18 @@ export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('access_token') || '')
   const refreshToken = ref(localStorage.getItem('refresh_token') || '')
   const userInfo = ref(null)
+  const unreadCount = ref(0)
 
   // 计算属性
   const isLoggedIn = computed(() => !!token.value)
   const creditLevel = computed(() => {
-    if (!userInfo.value) return { name: '新手', badge: '🌱' }
+    if (!userInfo.value) return { name: '新手', icon: 'Sunrise', color: '#909399' }
     const score = userInfo.value.creditScore || 0
-    if (score >= 201) return { name: '钻石', badge: '💎' }
-    if (score >= 101) return { name: '金牌', badge: '🥇' }
-    if (score >= 51) return { name: '银牌', badge: '🥈' }
-    if (score >= 21) return { name: '铜牌', badge: '🥉' }
-    return { name: '新手', badge: '🌱' }
+    if (score >= 201) return { name: '钻石', icon: 'Trophy', color: '#9B59B6' }
+    if (score >= 101) return { name: '金牌', icon: 'Medal', color: '#F5A623' }
+    if (score >= 51)  return { name: '银牌', icon: 'Medal', color: '#909399' }
+    if (score >= 21)  return { name: '铜牌', icon: 'Medal', color: '#E6A23C' }
+    return { name: '新手', icon: 'Sunrise', color: '#909399' }
   })
 
   // 操作
@@ -59,6 +60,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     isLoggedIn,
     creditLevel,
+    unreadCount,
     login,
     fetchUserInfo,
     logout,

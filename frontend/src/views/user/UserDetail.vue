@@ -7,7 +7,7 @@
             <el-avatar :size="80" :src="user.avatar">{{ user.nickname?.charAt(0) || 'U' }}</el-avatar>
             <h3>{{ user.nickname }}</h3>
             <CreditBadge :score="user.creditScore || 0" />
-            <p v-if="user.city" class="city">📍 {{ user.city }}</p>
+            <p v-if="user.city" class="city"><el-icon :size="14"><Location /></el-icon> {{ user.city }}</p>
             <p v-if="user.bio" class="bio">{{ user.bio }}</p>
           </div>
           <el-divider />
@@ -76,6 +76,7 @@ import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { userApi, reviewApi, mutualApi, messageApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Location } from '@element-plus/icons-vue'
 import CreditBadge from '@/components/CreditBadge.vue'
 
 const route = useRoute()

@@ -3,6 +3,7 @@ package com.youth.mutual.service;
 import com.youth.mutual.common.result.PageResult;
 import com.youth.mutual.entity.CreditLog;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,4 +19,7 @@ public interface CreditService {
 
     /** 获取信用变动记录 */
     PageResult<CreditLog> getCreditLogs(Long userId, int pageNum, int pageSize);
+
+    /** 获取信用分排行榜 */
+    List<Map<String, Object>> getLeaderboard(int limit);
 }

@@ -15,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -71,5 +73,30 @@ public class CreditServiceImpl implements CreditService {
                 .orderByDesc(CreditLog::getCreatedAt);
         Page<CreditLog> result = creditLogMapper.selectPage(page, wrapper);
         return new PageResult<>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords());
+    }
+
+    @Override
+    public List<Map<String, Object>> getLeaderboard(int limit) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(User::getId, User::getNickname, User::getAvatar, User::getCreditScore)
+                .orderByDesc(User::getCreditScore)
+                .last("LIMIT " + Math.max(1, Math.min(limit, 100)));
+        List<User> users = userMapper.selectList(wrapper);
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        int rank = 1;
+        for (User user : users) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("rank", rank++);
+            entry.put("userId", user.getId());
+            entry.put("nickname", user.getNickname());
+            entry.put("avatar", user.getAvatar());
+            entry.put("creditScore", user.getCreditScore());
+            CreditLevelEnum level = CreditLevelEnum.getByScore(user.getCreditScore());
+            entry.put("levelName", level.getName());
+            entry.put("levelBadge", level.getBadge());
+            result.add(entry);
+        }
+        return result;
     }
 }
