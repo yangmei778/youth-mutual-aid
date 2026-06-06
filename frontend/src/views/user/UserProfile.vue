@@ -203,8 +203,24 @@ function triggerAvatarUpload() { avatarInput.value?.click() }
 async function handleAvatarChange(e) {
   const f=e.target.files[0]; if(!f) return
   if(f.size>5*1024*1024){ElMessage.warning('头像不能超过5MB');return}
-  try { const r=await uploadApi.uploadImage(f); await userApi.updateProfile({avatar:r.data?.data||r.data}); await userStore.fetchUserInfo(); ElMessage.success('头像更新成功') }
-  catch{ElMessage.error('上传失败')}
+  try {
+    // 1. 上传文件
+    const uploadRes = await uploadApi.uploadImage(f)
+    // R<T> 响应：{code:200, data:"/api/v1/files/view/xxx"}
+    const avatarUrl = typeof uploadRes === 'string' ? uploadRes : (uploadRes?.data || '')
+    if (!avatarUrl) { ElMessage.error('获取上传地址失败'); return }
+
+    // 2. 更新用户头像
+    await userApi.updateProfile({ avatar: avatarUrl })
+
+    // 3. 立即刷新本地状态（不等接口返回）
+    userStore.userInfo.avatar = avatarUrl
+    await userStore.fetchUserInfo()
+    ElMessage.success('头像更新成功')
+  } catch (err) {
+    console.error('头像上传失败', err)
+    ElMessage.error('上传失败，请重试')
+  }
   e.target.value=''
 }
 function goToPost(p) {

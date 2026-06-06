@@ -147,30 +147,27 @@
     </el-dialog>
 
     <!-- 交换请求对话框 -->
-    <el-dialog
-      v-model="showRequestDialog"
-      title="发起交换请求"
-      width="480px"
-      :close-on-click-modal="false"
-    >
-      <el-form ref="requestFormRef" :model="requestForm" :rules="requestRules">
-        <el-form-item label="留言" prop="requestMessage">
-          <el-input
-            v-model="requestForm.requestMessage"
-            type="textarea"
-            placeholder="介绍一下你自己，说明你想如何交换..."
-            :rows="4"
-            maxlength="300"
-            show-word-limit
-          />
+    <el-dialog v-model="showRequestDialog" title="发起交换请求" width="500px" :close-on-click-modal="false" destroy-on-close>
+      <!-- 技能摘要 -->
+      <div class="req-summary" v-if="skill">
+        <div class="req-item-preview">
+          <div class="req-icon-wrap"><el-icon :size="22"><Collection /></el-icon></div>
+          <div>
+            <strong>{{ skill.title }}</strong>
+            <span class="req-type">{{ skill.type==='teach'?'能教':'想学' }} · {{ skill.category }}</span>
+          </div>
+        </div>
+      </div>
+      <el-form ref="requestFormRef" :model="requestForm" :rules="requestRules" label-position="top">
+        <el-form-item label="交换留言" prop="requestMessage">
+          <el-input v-model="requestForm.requestMessage" type="textarea"
+            placeholder="介绍一下你自己，说明你希望如何交换、你的技能或资源、时间安排..."
+            :rows="5" maxlength="300" show-word-limit />
         </el-form-item>
       </el-form>
-
       <template #footer>
-        <el-button @click="showRequestDialog = false">取消</el-button>
-        <el-button type="primary" :loading="requesting" @click="handleSendRequest">
-          发送请求
-        </el-button>
+        <el-button @click="showRequestDialog = false" size="large">取消</el-button>
+        <el-button type="primary" :loading="requesting" @click="handleSendRequest" size="large">发送请求</el-button>
       </template>
     </el-dialog>
   </div>

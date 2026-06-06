@@ -65,6 +65,8 @@ public class SecurityConfig {
                                 "/v1/auth/login",
                                 "/v1/auth/register",
                                 "/v1/auth/refresh-token",
+                                "/v1/files/view/**",
+                                "/v1/public/**",
                                 "/doc.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",

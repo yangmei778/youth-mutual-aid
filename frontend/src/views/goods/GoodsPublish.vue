@@ -64,6 +64,11 @@
           />
         </el-form-item>
 
+        <el-form-item label="预期价格" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" placeholder="0表示免费/不涉及交易" style="width:220px" />
+          <span style="margin-left:10px;color:var(--text-secondary);font-size:13px">元（填0表示免费或非卖品）</span>
+        </el-form-item>
+
         <el-form-item v-if="form.exchangeType === 'borrow'" label="可借用天数" prop="borrowDays">
           <el-input-number v-model="form.borrowDays" :min="1" :max="365" :step="1" />
           <span style="margin-left: 8px; color: var(--text-secondary)">天</span>
@@ -118,6 +123,7 @@ const form = reactive({
   exchangeType: 'borrow',
   expectedItems: '',
   borrowDays: 7,
+  price: null,
   images: [],
 })
 

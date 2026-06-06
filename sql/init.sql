@@ -89,6 +89,7 @@ CREATE TABLE t_goods_post (
     exchange_type   VARCHAR(20)     NOT NULL COMMENT '交换方式：borrow-借用，gift-赠送，exchange-交换',
     expected_items  VARCHAR(500)    DEFAULT NULL COMMENT '期望交换的物品（exchange时填写）',
     borrow_days     INT             DEFAULT NULL COMMENT '借用天数（borrow时填写）',
+    price           DECIMAL(10,2)   DEFAULT NULL COMMENT '预期价格（元），NULL表示不涉及',
     status          TINYINT         DEFAULT 1 COMMENT '状态：0-下架，1-可用，2-已借出，3-已送出',
     view_count      INT             DEFAULT 0 COMMENT '浏览次数',
     created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

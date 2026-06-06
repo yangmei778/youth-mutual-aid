@@ -23,6 +23,8 @@ public class GoodsPost {
     private String exchangeType;
     private String expectedItems;
     private Integer borrowDays;
+    /** 预期价格（元），null表示不涉及金钱交易 */
+    private java.math.BigDecimal price;
     private Integer status;
     private Integer viewCount;
     @TableField(fill = FieldFill.INSERT)

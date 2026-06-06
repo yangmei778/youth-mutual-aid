@@ -263,9 +263,8 @@ export const uploadApi = {
   uploadImage(file) {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post('/v1/files/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    // 不指定 Content-Type，让 axios 自动设置 boundary
+    return request.post('/v1/files/upload', formData)
   },
 }
 

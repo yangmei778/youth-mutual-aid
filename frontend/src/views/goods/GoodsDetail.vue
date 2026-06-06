@@ -48,6 +48,11 @@
               <p>{{ goods.expectedItems }}</p>
             </div>
 
+            <div class="info-section" v-if="goods.price != null && goods.price > 0">
+              <h3>预期价格</h3>
+              <p class="price-text">¥ {{ goods.price.toFixed(2) }}</p>
+            </div>
+
             <div class="info-section" v-if="goods.exchangeType === 'borrow' && goods.borrowDays">
               <h3>可借用天数</h3>
               <p>{{ goods.borrowDays }} 天</p>
@@ -123,22 +128,34 @@
       </el-row>
 
       <!-- 申请对话框 -->
-      <el-dialog v-model="requestDialogVisible" :title="requestButtonText" width="480px">
-        <el-form ref="requestFormRef" :model="requestForm" :rules="requestRules">
+      <el-dialog v-model="requestDialogVisible" :title="requestButtonText" width="500px" destroy-on-close class="request-dialog">
+        <!-- 物品摘要 -->
+        <div class="req-summary" v-if="goods">
+          <div class="req-item-preview">
+            <img v-if="goods.images" :src="getFirstImg(goods.images)" class="req-thumb" />
+            <div v-else class="req-thumb-placeholder"><el-icon :size="24"><Box /></el-icon></div>
+            <div>
+              <strong>{{ goods.title }}</strong>
+              <span v-if="goods.price>0" class="req-price">¥ {{ goods.price }}</span>
+              <span class="req-type">{{ tagLabel(goods.exchangeType) }}</span>
+            </div>
+          </div>
+        </div>
+        <el-form ref="requestFormRef" :model="requestForm" :rules="requestRules" label-position="top">
           <el-form-item label="申请留言" prop="requestMessage">
             <el-input
               v-model="requestForm.requestMessage"
               type="textarea"
-              placeholder="请说明你的申请理由和联系方式"
-              :rows="4"
+              placeholder="介绍一下你自己，说明申请理由、使用时长、联系方式等..."
+              :rows="5"
               maxlength="300"
               show-word-limit
             />
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="requestDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitRequest" :loading="requesting">提交申请</el-button>
+          <el-button @click="requestDialogVisible = false" size="large">取消</el-button>
+          <el-button type="primary" @click="submitRequest" :loading="requesting" size="large">发送申请</el-button>
         </template>
       </el-dialog>
     </template>
@@ -151,7 +168,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { goodsApi, mutualApi, reportApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View, ChatDotRound } from '@element-plus/icons-vue'
+import { View, ChatDotRound, Box } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -195,6 +212,11 @@ function tagType(type) {
 function tagLabel(type) {
   const map = { borrow: '借用', gift: '赠送', exchange: '交换' }
   return map[type] || type
+}
+function getFirstImg(imgs) {
+  if (!imgs) return ''
+  if (Array.isArray(imgs)) return imgs[0]
+  return imgs.split(',')[0] || ''
 }
 
 async function loadDetail() {
@@ -362,4 +384,28 @@ onMounted(() => {
   flex-direction: column;
   gap: 10px;
 }
+
+/* ====== 申请对话框 ====== */
+.req-summary {
+  background: #f8f9fb; border-radius: 14px; padding: 16px; margin-bottom: 20px;
+}
+.req-item-preview {
+  display: flex; align-items: center; gap: 14px;
+  strong { font-size: 15px; color: var(--text-primary); display: block; }
+}
+.req-thumb {
+  width: 56px; height: 56px; object-fit: cover; border-radius: 10px; flex-shrink: 0;
+}
+.req-thumb-placeholder {
+  width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+  background: #edf0f4; border-radius: 10px; flex-shrink: 0; color: #b0b8c4;
+}
+.req-price {
+  font-size: 16px; font-weight: 800; color: #f56c6c; margin-right: 8px;
+}
+.req-type {
+  font-size: 12px; color: #909399; background: #edf0f4; padding: 1px 8px; border-radius: 4px;
+}
+
+.price-text { font-size: 24px; font-weight: 800; color: #f56c6c; }
 </style>
