@@ -30,6 +30,7 @@ public class SkillPost {
     private String preferredLocation;
 
     private Integer onlineSupport;
+    private Integer isAnonymous;
 
     private Integer status;
 

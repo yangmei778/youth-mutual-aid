@@ -57,6 +57,10 @@
           <el-switch v-model="form.onlineSupport" active-text="是" inactive-text="否" />
         </el-form-item>
 
+        <el-form-item label="发布方式">
+          <el-switch v-model="form.isAnonymous" active-text="匿名发布" inactive-text="显示昵称" />
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" @click="handleSubmit" :loading="submitting">
             发布技能
@@ -90,6 +94,7 @@ const form = reactive({
   availableTime: '',
   preferredLocation: '',
   onlineSupport: false,
+  isAnonymous: false,
 })
 
 const rules = {
@@ -109,7 +114,7 @@ async function handleSubmit() {
   await formRef.value?.validate()
   submitting.value = true
   try {
-    const data = { ...form, onlineSupport: form.onlineSupport ? 1 : 0 }
+    const data = { ...form, onlineSupport: form.onlineSupport ? 1 : 0, isAnonymous: form.isAnonymous ? 1 : 0 }
     await skillApi.publish(data)
     ElMessage.success('发布成功')
     router.push('/skill')

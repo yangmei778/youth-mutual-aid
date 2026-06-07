@@ -122,10 +122,33 @@
               <el-button size="large" @click="$router.push('/goods')" style="width: 100%">
                 返回列表
               </el-button>
+              <el-button v-if="goods.userId !== userStore.userInfo?.id" text type="danger" size="small" style="width:100%;margin-top:4px" @click="openReportDialog">举报此物品</el-button>
             </div>
           </el-card>
         </el-col>
       </el-row>
+
+      <!-- 举报对话框 -->
+      <el-dialog v-model="reportDialogVisible" title="举报内容" width="460px" destroy-on-close>
+        <div class="report-warn"><el-icon :size="18"><WarningFilled /></el-icon> 你的举报将匿名提交给管理员审核</div>
+        <el-form :model="reportForm" label-position="top">
+          <el-form-item label="举报原因">
+            <el-select v-model="reportForm.reason" placeholder="请选择" style="width:100%">
+              <el-option label="虚假信息" value="虚假信息" />
+              <el-option label="违规内容" value="违规内容" />
+              <el-option label="欺诈行为" value="欺诈行为" />
+              <el-option label="其他" value="其他" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="详细描述">
+            <el-input v-model="reportForm.description" type="textarea" :rows="3" maxlength="300" show-word-limit placeholder="请描述具体问题..." />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="reportDialogVisible=false">取消</el-button>
+          <el-button type="danger" :loading="reportSubmitting" @click="handleReport">确认举报</el-button>
+        </template>
+      </el-dialog>
 
       <!-- 申请对话框 -->
       <el-dialog v-model="requestDialogVisible" :title="requestButtonText" width="500px" destroy-on-close class="request-dialog">
@@ -168,7 +191,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { goodsApi, mutualApi, reportApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View, ChatDotRound, Box } from '@element-plus/icons-vue'
+import { View, ChatDotRound, Box, WarningFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -210,7 +233,7 @@ function tagType(type) {
 }
 
 function tagLabel(type) {
-  const map = { borrow: '借用', gift: '赠送', exchange: '交换' }
+  const map = { sell: '出售', borrow: '借用', gift: '赠送', exchange: '交换' }
   return map[type] || type
 }
 function getFirstImg(imgs) {
@@ -275,6 +298,26 @@ async function handleDelete() {
   deleting.value = true
   try { await goodsApi.deleteGoods(goods.value.id); ElMessage.success('已删除'); router.push('/goods') }
   catch { /* error handled */ } finally { deleting.value = false }
+}
+
+// ====== 举报 ======
+const reportDialogVisible = ref(false)
+const reportSubmitting = ref(false)
+const reportForm = reactive({ reason: '违规内容', description: '' })
+function openReportDialog() { reportForm.reason = '违规内容'; reportForm.description = ''; reportDialogVisible.value = true }
+async function handleReport() {
+  if (!reportForm.reason) { ElMessage.warning('请选择举报原因'); return }
+  reportSubmitting.value = true
+  try {
+    await reportApi.submitReport({ targetType: 'goods', targetId: goods.value.id, reason: reportForm.reason, description: reportForm.description })
+    ElMessage.success('举报已提交，管理员将尽快处理')
+    reportDialogVisible.value = false
+  } catch (e) {
+    const msg = e?.response?.data?.message || e?.message || ''
+    if (msg.includes('重复') || msg.includes('已举报')) {
+      ElMessageBox.alert('您已举报过此内容，请耐心等待管理员处理', '无法重复举报', { confirmButtonText: '知道了', type: 'warning' })
+    }
+  } finally { reportSubmitting.value = false }
 }
 
 onMounted(() => {
@@ -408,4 +451,5 @@ onMounted(() => {
 }
 
 .price-text { font-size: 24px; font-weight: 800; color: #f56c6c; }
+.report-warn { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #fef0f0; border-radius: 10px; color: #f56c6c; font-size: 13px; margin-bottom: 16px; }
 </style>

@@ -174,8 +174,13 @@ public class SkillServiceImpl extends ServiceImpl<SkillPostMapper, SkillPost> im
         for (SkillPost post : posts) {
             User user = userMap.get(post.getUserId());
             if (user != null) {
-                post.setNickname(user.getNickname());
-                post.setAvatar(user.getAvatar());
+                if (post.getIsAnonymous() != null && post.getIsAnonymous() == 1) {
+                    post.setNickname("匿名用户");
+                    post.setAvatar(null);
+                } else {
+                    post.setNickname(user.getNickname());
+                    post.setAvatar(user.getAvatar());
+                }
                 post.setCreditScore(user.getCreditScore());
             }
         }

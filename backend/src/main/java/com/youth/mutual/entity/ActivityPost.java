@@ -25,6 +25,7 @@ public class ActivityPost {
     private Integer maxMembers;
     private Integer currentMembers;
     private String costDesc;
+    private Integer isAnonymous;
     private Integer status;
     private Integer viewCount;
     @TableField(fill = FieldFill.INSERT)

@@ -32,6 +32,7 @@
           <el-menu-item index="/admin/reports">
             <el-icon><WarningFilled /></el-icon>
             <span>举报管理</span>
+            <el-badge :value="reportBadge" :hidden="!reportBadge" class="menu-badge" />
           </el-menu-item>
           <el-menu-item index="/admin/config">
             <el-icon><Setting /></el-icon>
@@ -57,8 +58,21 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { DataAnalysis, User, DocumentChecked, Trophy, Connection, WarningFilled, Setting } from '@element-plus/icons-vue'
 
+import { ref, onMounted } from 'vue'
+
 const route = useRoute()
 const activeMenu = computed(() => route.path)
+const reportBadge = ref(0)
+
+async function fetchReportBadge() {
+  try {
+    const { adminApi } = await import('@/api')
+    const r = await adminApi.getReports({ status: 'pending', pageNum: 1, pageSize: 1 })
+    const total = r.data?.data?.total || r.data?.total || 0
+    reportBadge.value = total
+  } catch {}
+}
+onMounted(() => { fetchReportBadge(); setInterval(fetchReportBadge, 30000) })
 </script>
 
 <style lang="scss" scoped>
@@ -93,5 +107,9 @@ const activeMenu = computed(() => route.path)
 
 .admin-main {
   background: #f5f7fa;
+}
+.menu-badge {
+  margin-left: auto;
+  :deep(.el-badge__content) { top: 50%; transform: translateY(-50%); }
 }
 </style>

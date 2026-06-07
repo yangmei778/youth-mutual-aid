@@ -38,3 +38,9 @@ CREATE TABLE IF NOT EXISTS t_system_config (
     PRIMARY KEY (id),
     UNIQUE KEY uk_config_key (config_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 已有表字段补丁
+ALTER TABLE t_goods_post ADD COLUMN price DECIMAL(10,2) DEFAULT NULL;
+ALTER TABLE t_goods_post ADD COLUMN is_anonymous TINYINT DEFAULT 0;
+ALTER TABLE t_skill_post ADD COLUMN is_anonymous TINYINT DEFAULT 0;
+ALTER TABLE t_activity_post ADD COLUMN is_anonymous TINYINT DEFAULT 0;

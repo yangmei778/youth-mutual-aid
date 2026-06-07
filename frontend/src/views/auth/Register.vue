@@ -84,7 +84,7 @@
             />
           </el-form-item>
 
-          <el-form-item prop="city">
+          <el-form-item prop="cityArea">
             <el-cascader
               v-model="form.cityArea"
               :options="areaOptions"
@@ -156,7 +156,7 @@ const rules = {
     { required: true, message: '请设置昵称', trigger: 'blur' },
     { min: 2, max: 50, message: '昵称长度为2-50位', trigger: 'blur' },
   ],
-  city: [{ required: true, message: '请选择城市', trigger: 'change' }],
+  cityArea: [{ required: true, message: '请选择城市', trigger: 'change', validator: (r, v, cb) => { if (!v || v.length === 0) cb(new Error('请选择城市')); else cb() } }],
 }
 
 // 粒子随机样式
@@ -175,12 +175,19 @@ function particleStyle(i) {
 
 async function handleRegister() {
   await formRef.value?.validate()
-  // 级联选择值转为城市名
-  form.city = form.cityArea?.length >= 2
-    ? areaData.find(p => p.value === form.cityArea[0])?.children?.find(c => c.value === form.cityArea[1])?.label || ''
-    : form.cityArea?.length === 1
-      ? areaData.find(p => p.value === form.cityArea[0])?.label || ''
-      : ''
+  // 级联选择值转为城市名（省/市/区 → 只取城市名）
+  if (!form.cityArea || form.cityArea.length === 0) { ElMessage.warning('请选择城市'); return }
+  let cityName = ''
+  const province = areaData.find(p => p.value === form.cityArea[0])
+  if (province) {
+    if (form.cityArea.length >= 2) {
+      const city = province.children?.find(c => c.value === form.cityArea[1])
+      cityName = city?.label || province.label
+    } else {
+      cityName = province.label
+    }
+  }
+  form.city = cityName || '未知'
   loading.value = true
   try {
     await authApi.register({

@@ -293,22 +293,7 @@ CREATE TABLE t_notification (
 -- ============================================================
 -- 12. 举报表
 -- ============================================================
-CREATE TABLE t_report (
-    id              BIGINT          NOT NULL AUTO_INCREMENT COMMENT '举报ID',
-    reporter_id     BIGINT          NOT NULL COMMENT '举报人ID',
-    target_type     VARCHAR(20)     NOT NULL COMMENT '举报对象类型：user-用户，skill-技能，goods-物品，activity-活动',
-    target_id       BIGINT          NOT NULL COMMENT '举报对象ID',
-    reason          VARCHAR(500)    NOT NULL COMMENT '举报原因',
-    status          TINYINT         DEFAULT 0 COMMENT '处理状态：0-待处理，1-已处理-有效，2-已处理-无效',
-    handle_result   VARCHAR(500)    DEFAULT NULL COMMENT '处理结果',
-    handler_id      BIGINT          DEFAULT NULL COMMENT '处理人ID',
-    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at      DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    KEY idx_reporter (reporter_id),
-    KEY idx_target (target_type, target_id),
-    KEY idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='举报表';
+-- 举报表旧版已废弃，使用上面 166行 的版本
 
 -- ============================================================
 -- 初始数据

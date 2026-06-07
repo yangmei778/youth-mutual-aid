@@ -33,20 +33,21 @@
             <el-button v-if="hasUnread" text type="primary" size="small" @click="handleMarkAllRead">全部已读</el-button>
           </div>
           <div class="notif-list" v-loading="notifLoading">
-            <div v-for="item in notifications" :key="item.id" class="notif-card" :class="{ unread: !item.isRead }" @click="handleMarkRead(item)">
+            <div v-for="item in notifications" :key="item.id" class="notif-card" :class="[isNotifUnread(item) ? 'unread' : '', isNotifUnread(item) ? notifCardClass(item) : '']">
               <div class="ncard-left">
                 <div class="ncard-icon" :class="iconClass(item.type)">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <template v-if="item.type?.includes('request')"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></template>
+                    <template v-if="isRequest(item.type)"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></template>
                     <template v-else-if="item.type?.includes('complete')"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></template>
                     <template v-else><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></template>
                   </svg>
                 </div>
               </div>
-              <div class="ncard-body">
+              <div class="ncard-body" @click="handleNotifClick(item)">
                 <div class="ncard-title">{{ item.title }}</div>
-                <div class="ncard-text">{{ item.content }}</div>
+                <div class="ncard-text" v-if="item.content">{{ item.content }}</div>
                 <div class="ncard-time">{{ formatNotifTime(item.createdAt) }}</div>
+                <span class="ncard-hint">点击查看 →</span>
               </div>
               <div class="ncard-right">
                 <span v-if="!item.isRead" class="unread-dot"></span>
@@ -146,31 +147,124 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { messageApi } from '@/api'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const currentUserId = computed(() => userStore.userInfo?.id)
 const activeTab = ref('notification')
 
 // ====== 通知 ======
 const notifications = ref([])
+const readIds = ref([]) // 本地已读缓存（响应式数组）
 const notifLoading = ref(false)
-const hasUnread = computed(() => notifications.value.some(n => !n.isRead))
+const hasUnread = computed(() => notifications.value.some(n => isNotifUnread(n)))
 const notifUnread = computed(() => notifications.value.filter(n => !n.isRead).length)
+
+function isRequest(t) { return t && (t.includes('request') || t.includes('|')) }
+function canNavigate(item) {
+  const t = item.type || ''
+  return t.startsWith('reported|') || t.startsWith('content_offline|') || t.includes('activity_') || t.includes('mutual_')
+}
+function isNotifUnread(item) { return !item.isRead && !readIds.value.includes(item.id) }
+function notifCardClass(item) {
+  const t = item.type || ''
+  if (t.startsWith('reported|')) return 'notif-warn'
+  if (t.startsWith('content_offline|')) return 'notif-danger'
+  return ''
+}
+function parseNotifType(t) {
+  // type 格式: "skill|请求者ID|relatedId" 或纯字符串
+  if (!t) return null
+  if (t.includes('|')) {
+    const parts = t.split('|')
+    return { itemType: parts[0], requesterId: parts[1], relatedId: parts[2] }
+  }
+  return null
+}
+function handleNotifClick(item) {
+  handleMarkRead(item)
+  // 根据通知类型跳转到对应内容
+  const t = item.type || ''
+  const rid = item.relatedId
+
+  // 被举报 / 被下架 → 跳转到内容，带原因参数
+  if (t.startsWith('reported|') || t.startsWith('content_offline|')) {
+    const targetType = t.split('|')[1]
+    const routeMap = { skill: '/skill/', goods: '/goods/', activity: '/activity/' }
+    if (rid && targetType) {
+      router.push({ path: (routeMap[targetType] || '/skill/') + rid, query: { reason: item.content || '' } })
+    }
+    return
+  }
+
+  // 互助请求 → 跳转到内容详情
+  if (isRequest(t)) {
+    goToItem(item)
+    return
+  }
+
+  // 报名通过/拒绝 → 跳转到活动
+  if (t.includes('activity_approved') || t.includes('activity_rejected')) {
+    if (rid) router.push('/activity/' + rid)
+    return
+  }
+
+  // 互助接受/拒绝/取消 → 跳转到互助记录
+  if (t.includes('mutual_')) {
+    if (rid) router.push('/mutual/' + rid)
+    return
+  }
+
+  // 管理员：新举报 → 举报管理页
+  if (t === 'report_new') {
+    router.push('/admin/reports')
+    return
+  }
+
+  // 举报处理结果 → 留在消息页（无内容可跳）
+  if (t === 'report_result') return
+}
+function goToItem(item) {
+  handleMarkRead(item)
+  const info = parseNotifType(item.type)
+  if (info && info.relatedId && info.relatedId !== '0') {
+    const path = '/' + item.type.split('|')[0] + '/' + info.relatedId
+    router.push(path).catch(() => { location.href = path })
+  } else if (item.relatedId) {
+    router.push('/mutual/' + item.relatedId).catch(() => {})
+  } else {
+    ElMessage.warning('无法跳转')
+  }
+}
+function chatWithRequester(item) {
+  handleMarkRead(item)
+  const info = parseNotifType(item.type)
+  if (!info?.requesterId) return
+  // 直接路由跳转到私信并带用户参数
+  activeTab.value = 'message'
+  router.push('/message?chat=' + info.requesterId)
+  // 同时主动拉取会话
+  setTimeout(async () => {
+    await fetchConversations()
+    const c = conversations.value.find(cc => cc.userId == info.requesterId)
+    if (c) openConversation(c)
+  }, 600)
+}
 
 function typeLabel(t) {
   if (!t) return ''
+  if (t.includes('|')) t = t.split('|')[0]
   if (t.includes('request')) return '互助请求'
   if (t.includes('reject')) return '已拒绝'
   if (t.includes('complete')) return '已完成'
   if (t.includes('cancel')) return '已取消'
   if (t.includes('approved')) return '报名通过'
-  if (t.includes('activity')) return '活动通知'
   return ''
 }
 function iconClass(t) {
@@ -197,13 +291,19 @@ async function fetchNotifications() {
   } catch { /* ignore */ }
   finally { notifLoading.value = false }
 }
-async function handleMarkRead(item) {
-  if (item.isRead) return
-  try { await messageApi.markAsRead(item.id); item.isRead = true; refreshUnread() } catch { ElMessage.error('标记失败') }
+function handleMarkRead(item) {
+  if (readIds.value.includes(item.id)) return
+  readIds.value.push(item.id)
+  item.isRead = true
+  refreshUnread()
+  messageApi.markAsRead(item.id).catch(() => {})
 }
 async function handleMarkAllRead() {
-  try { await messageApi.markAllRead(); notifications.value.forEach(n => n.isRead = true); ElMessage.success('已全部已读'); refreshUnread() }
-  catch { ElMessage.error('操作失败') }
+  try {
+    await messageApi.markAllRead()
+    notifications.value.forEach(n => { n.isRead = true; readIds.value.push(n.id) })
+    ElMessage.success('已全部已读'); refreshUnread()
+  } catch { ElMessage.error('操作失败') }
 }
 async function refreshUnread() {
   try { const r = await messageApi.getUnreadCount(); userStore.unreadCount = r.data || 0 } catch {}
@@ -317,6 +417,8 @@ onMounted(async () => {
   cursor: pointer; transition: all 0.2s; margin-bottom: 4px;
   &:hover { background: #f8f9fb; }
   &.unread { background: #f0f5ff; border-left: 3px solid var(--primary-color); padding-left: 13px; }
+  &.notif-warn { border-left: 3px solid #e6a23c; background: #fef9e7; padding-left: 13px; }
+  &.notif-danger { border-left: 3px solid #f56c6c; background: #fef0f0; padding-left: 13px; }
 }
 .ncard-left { flex-shrink: 0; }
 .ncard-icon {
@@ -333,6 +435,7 @@ onMounted(async () => {
 .ncard-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary-color); margin-top: 4px; }
 .ncard-type { font-size: 11px; color: #909399; background: #f5f6f8; padding: 2px 8px; border-radius: 6px; }
+.ncard-hint { font-size: 12px; color: var(--primary-color); font-weight: 500; display: block; margin-top: 6px; }
 
 /* ====== 聊天面板 ====== */
 .chat-panel { height: 100%; }

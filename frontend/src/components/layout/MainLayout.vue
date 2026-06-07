@@ -34,10 +34,11 @@
                 {{ userStore.userInfo?.nickname?.charAt(0) || 'U' }}
               </el-avatar>
               <span class="user-name">{{ userStore.userInfo?.nickname || '用户' }}</span>
-              <span class="credit-badge-mini" :style="{ color: userStore.creditLevel.color }">
+              <span v-if="!isAdmin" class="credit-badge-mini" :style="{ color: userStore.creditLevel.color }">
                 <el-icon :size="14"><component :is="userStore.creditLevel.icon" /></el-icon>
                 {{ userStore.creditLevel.name }}
               </span>
+              <span v-else class="admin-badge">管理员</span>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -254,6 +255,10 @@ function handleCommand(command) {
     gap: 3px;
     font-size: 12px;
     font-weight: 500;
+  }
+  .admin-badge {
+    font-size: 12px; font-weight: 600; color: #f56c6c;
+    background: rgba(245,108,108,0.08); padding: 2px 10px; border-radius: 8px;
   }
 }
 

@@ -71,29 +71,39 @@
                 </div>
               </div>
 
+              <!-- 下架横幅 -->
+              <div v-if="isOffline" class="offline-banner">
+                <el-icon :size="20"><WarningFilled /></el-icon>
+                <div>
+                  <strong>此内容已被管理员下架</strong>
+                  <span v-if="reportReason">{{ reportReason }}</span>
+                  <span v-else-if="isPublisher">如有疑问请联系管理员</span>
+                </div>
+              </div>
+
               <div class="action-bar">
-                <!-- 发布者不能给自己发起交换请求 -->
-                <el-button v-if="!isPublisher" type="primary" size="large" @click="showRequestDialog = true">
-                  发起交换请求
-                </el-button>
-                <el-button v-if="!isPublisher" size="large" @click="contactPublisher">
-                  <el-icon><ChatDotRound /></el-icon> 联系TA
-                </el-button>
-                <template v-if="isPublisher">
-                  <el-tag type="info" size="large" effect="plain">这是我发布的技能</el-tag>
-                  <el-button size="large" type="danger" plain @click="handleOffline" :loading="offlining">
-                    下架技能
-                  </el-button>
-                  <el-button size="large" type="danger" @click="handleDelete" :loading="deleting">
-                    删除技能
-                  </el-button>
+                <!-- 已下架：只显示返回 -->
+                <template v-if="isOffline">
+                  <el-button size="large" @click="router.push('/skill')">返回列表</el-button>
                 </template>
-                <el-button size="large" @click="router.push('/skill')">
-                  返回列表
-                </el-button>
-                <el-button text type="danger" size="small" @click="openReportDialog" v-if="!isPublisher">
-                  举报
-                </el-button>
+                <template v-else>
+                  <el-button v-if="!isPublisher" type="primary" size="large" @click="showRequestDialog = true">发起交换请求</el-button>
+                  <el-button v-if="!isPublisher" size="large" @click="contactPublisher"><el-icon><ChatDotRound /></el-icon> 联系TA</el-button>
+                  <template v-if="isPublisher">
+                    <el-tag type="info" size="large" effect="plain">这是我发布的技能</el-tag>
+                    <el-button size="large" type="danger" plain @click="handleOffline" :loading="offlining">下架技能</el-button>
+                    <el-button size="large" type="danger" @click="handleDelete" :loading="deleting">删除技能</el-button>
+                  </template>
+                  <el-button size="large" @click="router.push('/skill')">返回列表</el-button>
+                  <el-button text type="danger" size="small" @click="openReportDialog" v-if="!isPublisher">举报</el-button>
+                </template>
+              </div>
+
+              <!-- 管理员操作 -->
+              <div v-if="isAdmin && !isPublisher && !isOffline" class="admin-bar">
+                <el-tag type="danger" size="small" effect="dark">管理员操作</el-tag>
+                <el-button size="small" type="warning" plain @click="adminOffline">下架</el-button>
+                <el-button size="small" type="danger" @click="adminDelete" :loading="adminOfflining">删除</el-button>
               </div>
             </el-card>
           </el-col>
@@ -177,18 +187,31 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { skillApi, mutualApi, reportApi } from '@/api'
+import { skillApi, mutualApi, reportApi, adminApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, View, Star, ChatDotRound } from '@element-plus/icons-vue'
+import { ArrowLeft, View, Star, ChatDotRound, WarningFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
 // 判断当前用户是否为该技能的发布者，防止自己给自己发起交换请求
-const isPublisher = computed(() => {
-  return userStore.userInfo?.id === skill.value?.userId
-})
+const isPublisher = computed(() => userStore.userInfo?.id === skill.value?.userId)
+const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
+const isOffline = computed(() => skill.value?.status === 0)
+const reportReason = computed(() => route.query.reason || '')
+
+// 管理员操作
+const adminOfflining = ref(false)
+async function adminOffline() {
+  try { await ElMessageBox.confirm('管理员下架此技能？', '管理操作', { type: 'warning' }) } catch { return }
+  adminOfflining.value = true
+  try { await adminApi.offlineSkill(skill.value.id); ElMessage.success('已下架'); fetchDetail() } catch {} finally { adminOfflining.value = false }
+}
+async function adminDelete() {
+  try { await ElMessageBox.confirm('管理员永久删除此技能？不可恢复。', '管理操作', { type: 'error', confirmButtonText: '删除' }) } catch { return }
+  try { await adminApi.deleteSkill(skill.value.id); ElMessage.success('已删除'); router.push('/skill') } catch {}
+}
 
 const loading = ref(false)
 const skill = ref(null)
@@ -264,8 +287,13 @@ async function handleReport() {
     })
     ElMessage.success('举报已提交，我们会尽快处理')
     reportDialogVisible.value = false
-  } catch { /* error handled by interceptor */ }
-  finally { reportSubmitting.value = false }
+  } catch (e) {
+    const msg = e?.response?.data?.message || e?.message || ''
+    if (msg.includes('重复') || msg.includes('已举报')) {
+      ElMessageBox.alert('您已举报过此内容，请耐心等待管理员处理', '无法重复举报', { confirmButtonText: '知道了', type: 'warning' })
+    }
+    // 其他错误已在拦截器显示
+  } finally { reportSubmitting.value = false }
 }
 
 // ====== 下架技能 ======
@@ -401,5 +429,29 @@ onMounted(() => {
   .credit-tag {
     width: fit-content;
   }
+}
+
+.admin-bar {
+  margin-top: 32px; margin-bottom: 16px;
+  padding: 16px 20px;
+  background: #fef0f0; border: 1px solid #fbc4c4;
+  border-radius: 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.offline-banner, .report-banner {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 22px; margin-bottom: 16px;
+  border-radius: 14px;
+  strong { display: block; font-size: 15px; }
+  span { font-size: 13px; color: #909399; }
+  .el-icon { margin-top: 2px; flex-shrink: 0; }
+}
+.offline-banner { background: #fef0f0; border: 1px solid #fbc4c4;
+  strong { color: #f56c6c; }
+  .el-icon { color: #f56c6c; }
+}
+.report-banner { background: #fef9e7; border: 1px solid #f5dab1;
+  strong { color: #e6a23c; }
+  .el-icon { color: #e6a23c; }
 }
 </style>

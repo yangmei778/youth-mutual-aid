@@ -24,7 +24,12 @@ public class GoodsPost {
     private String expectedItems;
     private Integer borrowDays;
     /** 预期价格（元），null表示不涉及金钱交易 */
+    @TableField(exist = false)
     private java.math.BigDecimal price;
+    /** 匿名发布：1=匿名，0=显示昵称 */
+    private Integer isAnonymous;
+    @TableField(exist = false)
+    private String displayNickname;
     private Integer status;
     private Integer viewCount;
     @TableField(fill = FieldFill.INSERT)

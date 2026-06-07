@@ -49,29 +49,30 @@
 
         <el-form-item label="交换方式" prop="exchangeType">
           <el-radio-group v-model="form.exchangeType">
+            <el-radio value="sell">出售</el-radio>
             <el-radio value="borrow">借用</el-radio>
             <el-radio value="gift">赠送</el-radio>
             <el-radio value="exchange">交换</el-radio>
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item v-if="form.exchangeType === 'exchange'" label="期望交换物品" prop="expectedItems">
-          <el-input
-            v-model="form.expectedItems"
-            placeholder="请描述你希望交换的物品"
-            maxlength="200"
-            show-word-limit
-          />
+        <el-form-item v-if="form.exchangeType === 'sell' || form.exchangeType === 'borrow'" :label="form.exchangeType === 'sell' ? '出售价格' : '借用价格（选填）'" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" style="width:220px" />
+          <span style="margin-left:10px;color:var(--text-secondary);font-size:13px">元</span>
         </el-form-item>
 
-        <el-form-item label="预期价格" prop="price">
-          <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" placeholder="0表示免费/不涉及交易" style="width:220px" />
-          <span style="margin-left:10px;color:var(--text-secondary);font-size:13px">元（填0表示免费或非卖品）</span>
+        <el-form-item v-if="form.exchangeType === 'exchange'" label="期望交换物品" prop="expectedItems">
+          <el-input v-model="form.expectedItems" placeholder="请描述你希望交换的物品" maxlength="200" show-word-limit />
         </el-form-item>
 
         <el-form-item v-if="form.exchangeType === 'borrow'" label="可借用天数" prop="borrowDays">
           <el-input-number v-model="form.borrowDays" :min="1" :max="365" :step="1" />
           <span style="margin-left: 8px; color: var(--text-secondary)">天</span>
+        </el-form-item>
+
+        <el-form-item label="发布方式">
+          <el-switch v-model="form.isAnonymous" active-text="匿名发布" inactive-text="显示昵称" />
+          <span style="margin-left:12px;color:var(--text-secondary);font-size:13px">{{ form.isAnonymous ? '其他用户看到的是"匿名用户"' : '其他用户可以看到你的昵称' }}</span>
         </el-form-item>
 
         <el-form-item label="物品图片" prop="images">
@@ -124,6 +125,7 @@ const form = reactive({
   expectedItems: '',
   borrowDays: 7,
   price: null,
+  isAnonymous: false,
   images: [],
 })
 
@@ -181,10 +183,15 @@ async function handleSubmit() {
     if (data.exchangeType !== 'borrow') {
       delete data.borrowDays
     }
-    // images 数组转逗号分隔字符串（后端 images 字段是 VARCHAR）
+    // price 为空或0时不传，避免null值问题
+    if (!data.price || data.price === 0) {
+      delete data.price
+    }
+    // images 数组转逗号分隔字符串
     if (Array.isArray(data.images)) {
       data.images = data.images.join(',')
     }
+    data.isAnonymous = data.isAnonymous ? 1 : 0
     await goodsApi.publish(data)
     ElMessage.success('发布成功')
     router.push('/goods')

@@ -5,6 +5,7 @@ import router from './router'
 import App from './App.vue'
 import '@/assets/styles/global.scss'
 
+
 const app = createApp(App)
 
 // 注册 Element Plus 图标

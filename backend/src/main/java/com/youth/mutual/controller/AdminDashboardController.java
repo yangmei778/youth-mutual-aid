@@ -28,6 +28,7 @@ public class AdminDashboardController {
     private final ActivityPostMapper activityPostMapper;
     private final MutualRecordMapper mutualRecordMapper;
     private final ActivityMemberMapper activityMemberMapper;
+    private final ReportMapper reportMapper;
 
     @Operation(summary = "获取统计数据")
     @GetMapping("/stats")
@@ -50,6 +51,8 @@ public class AdminDashboardController {
         // 待审核报名数
         stats.put("pendingAuditCount", activityMemberMapper.selectCount(
                 new LambdaQueryWrapper<ActivityMember>().eq(ActivityMember::getStatus, 0)));
+        stats.put("pendingReportCount", reportMapper.selectCount(
+                new LambdaQueryWrapper<Report>().eq(Report::getStatus, "pending")));
 
         // 最近7天新增用户
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);

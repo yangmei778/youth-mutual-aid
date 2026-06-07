@@ -356,25 +356,35 @@ export const adminApi = {
   offlineSkill(id) {
     return request.put(`/v1/admin/content/skills/${id}/offline`)
   },
+  /** 删除技能（管理员） */
+  deleteSkill(id) {
+    return request.delete(`/v1/admin/content/skills/${id}`)
+  },
 
   /** 获取物品列表（管理） */
   getGoods(params) {
     return request.get('/v1/admin/content/goods', { params })
   },
-
   /** 下架物品 */
   offlineGoods(id) {
     return request.put(`/v1/admin/content/goods/${id}/offline`)
+  },
+  /** 删除物品（管理员） */
+  deleteGoods(id) {
+    return request.delete(`/v1/admin/content/goods/${id}`)
   },
 
   /** 获取活动列表（管理） */
   getActivities(params) {
     return request.get('/v1/admin/content/activities', { params })
   },
-
   /** 下架活动 */
   offlineActivity(id) {
     return request.put(`/v1/admin/content/activities/${id}/offline`)
+  },
+  /** 删除活动（管理员） */
+  deleteActivity(id) {
+    return request.delete(`/v1/admin/content/activities/${id}`)
   },
 
   /** 调整信用分 */

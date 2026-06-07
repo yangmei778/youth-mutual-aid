@@ -80,6 +80,10 @@
           <el-input v-model="form.costDesc" placeholder="如：AA制约50元/人" />
         </el-form-item>
 
+        <el-form-item label="发布方式">
+          <el-switch v-model="form.isAnonymous" active-text="匿名发布" inactive-text="显示昵称" />
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">发布活动</el-button>
           <el-button @click="$router.back()">取消</el-button>

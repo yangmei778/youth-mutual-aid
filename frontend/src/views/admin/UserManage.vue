@@ -1,60 +1,48 @@
 <template>
-  <div class="user-manage page-container">
-    <el-card shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span>用户管理</span>
-          <div class="search-bar">
-            <el-input v-model="keyword" placeholder="搜索用户名/昵称" clearable @clear="fetchUsers" @keyup.enter="fetchUsers" style="width: 250px">
-              <template #append>
-                <el-button @click="fetchUsers" :icon="Search" />
-              </template>
-            </el-input>
-          </div>
-        </div>
-      </template>
-      <el-table :data="userList" v-loading="loading" stripe>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="username" label="用户名" width="140" />
-        <el-table-column prop="nickname" label="昵称" width="140" />
-        <el-table-column prop="city" label="城市" width="120" />
-        <el-table-column prop="creditScore" label="信用分" width="100" />
-        <el-table-column prop="status" label="状态" width="100">
+  <div class="admin-page">
+    <div class="ap-hero">
+      <div class="aph-left">
+        <h2>用户管理</h2>
+        <p>共 <strong>{{ total }}</strong> 名注册用户</p>
+      </div>
+      <div class="aph-right">
+        <el-input v-model="keyword" placeholder="搜索用户名/昵称..." clearable :prefix-icon="Search" style="width:260px" @keyup.enter="fetchUsers" @clear="fetchUsers" />
+      </div>
+    </div>
+
+    <div class="ap-card">
+      <el-table :data="userList" v-loading="loading" stripe class="modern-table">
+        <el-table-column prop="id" label="ID" width="70" />
+        <el-table-column label="用户" min-width="180">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'danger'" size="small">
-              {{ row.status === 'active' ? '正常' : '封禁' }}
-            </el-tag>
+            <div class="user-cell">
+              <el-avatar :size="32">{{ row.nickname?.charAt(0) }}</el-avatar>
+              <div>
+                <span class="uc-name">{{ row.nickname }}</span>
+                <span class="uc-uname">@{{ row.username }}</span>
+              </div>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="180" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column prop="city" label="城市" width="100" />
+        <el-table-column prop="creditScore" label="信用分" width="90" />
+        <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'active'"
-              type="danger"
-              size="small"
-              @click="handleUpdateStatus(row.id, 'banned')"
-            >封禁</el-button>
-            <el-button
-              v-else
-              type="success"
-              size="small"
-              @click="handleUpdateStatus(row.id, 'active')"
-            >解封</el-button>
+            <el-tag :type="row.status===1?'success':'danger'" size="small" effect="dark" round>{{ row.status===1?'正常':'封禁' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createdAt" label="注册时间" width="170" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="row.status===1" type="danger" size="small" plain @click="handleUpdateStatus(row.id,'banned')">封禁</el-button>
+            <el-button v-else type="success" size="small" plain @click="handleUpdateStatus(row.id,1)">解封</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination
-        v-if="total > 0"
-        class="pagination"
-        background
-        layout="total, prev, pager, next"
-        :total="total"
-        :page-size="pageSize"
-        :current-page="currentPage"
-        @current-change="handlePageChange"
-      />
-    </el-card>
+      <div class="ap-footer" v-if="total>0">
+        <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total" :page-sizes="[10,20,50]" layout="total,sizes,prev,pager,next" background @size-change="fetchUsers" @current-change="fetchUsers" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -64,63 +52,37 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
-const keyword = ref('')
-const userList = ref([])
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
+const keyword = ref(''); const userList = ref([]); const total = ref(0)
+const loading = ref(false); const page = ref(1); const pageSize = ref(10)
 
 async function fetchUsers() {
   loading.value = true
   try {
-    const res = await adminApi.getUsers({
-      keyword: keyword.value,
-      page: currentPage.value,
-      size: pageSize.value,
-    })
-    const data = res.data?.data || res.data || {}
-    userList.value = data.records || data || []
-    total.value = data.total || userList.value.length
-  } catch (e) {
-    ElMessage.error('获取用户列表失败')
-  } finally {
-    loading.value = false
-  }
+    const r = await adminApi.getUsers({ keyword: keyword.value, pageNum: page.value, pageSize: pageSize.value })
+    userList.value = r.data?.data?.records || r.data?.data || r.data?.records || []
+    total.value = r.data?.data?.total || r.data?.total || 0
+  } catch {} finally { loading.value = false }
 }
-
 async function handleUpdateStatus(id, status) {
-  const action = status === 'banned' ? '封禁' : '解封'
-  try {
-    await ElMessageBox.confirm(`确定${action}该用户？`, '提示', { type: 'warning' })
-    await adminApi.updateUserStatus(id, status)
-    ElMessage.success(`${action}成功`)
-    fetchUsers()
-  } catch (e) {
-    if (e !== 'cancel') ElMessage.error('操作失败')
-  }
+  try { await ElMessageBox.confirm(`确定${status==='banned'?'封禁':'解封'}此用户？`, '确认', { type: 'warning' }) } catch { return }
+  try { await adminApi.updateUserStatus(id, status); ElMessage.success('操作成功'); fetchUsers() } catch {}
 }
-
-function handlePageChange(page) {
-  currentPage.value = page
-  fetchUsers()
-}
-
-onMounted(() => {
-  fetchUsers()
-})
+onMounted(() => fetchUsers())
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.admin-page { max-width: 100%; }
+.ap-hero { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+  h2 { font-size: 22px; font-weight: 800; margin: 0; }
+  p { font-size: 14px; color: #909399; margin: 4px 0 0; strong { color: var(--primary-color); } }
 }
-
-.pagination {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
+.ap-card { background: #fff; border: 1px solid #edf0f4; border-radius: 16px; padding: 20px 24px; }
+.modern-table {
+  :deep(th) { font-weight: 700; color: var(--text-primary); background: #f8f9fb; border: none; }
+  :deep(td) { border-color: #f5f6f8; }
 }
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.uc-name { display: block; font-size: 14px; font-weight: 600; }
+.uc-uname { display: block; font-size: 12px; color: #909399; }
+.ap-footer { display: flex; justify-content: center; margin-top: 20px; }
 </style>

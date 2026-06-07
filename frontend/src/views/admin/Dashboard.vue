@@ -53,7 +53,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Cpu, Box, Calendar, Connection, Warning, Plus, DataAnalysis } from '@element-plus/icons-vue'
+import { User, Cpu, Box, Calendar, Connection, Warning, WarningFilled, Plus, DataAnalysis } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 import * as echarts from 'echarts'
 
@@ -64,6 +64,7 @@ const stats = ref({
   activityCount: 0,
   mutualRecordCount: 0,
   pendingAuditCount: 0,
+  pendingReportCount: 0,
   recentUsers: 0,
   activeUsers: 0,
   categoryDistribution: [],
@@ -83,6 +84,7 @@ const topCards = computed(() => [
 const bottomCards = computed(() => [
   { label: '互助记录', value: stats.value.mutualRecordCount, icon: Connection, color: '#409EFF' },
   { label: '待审核报名', value: stats.value.pendingAuditCount, icon: Warning, color: '#E6A23C' },
+  { label: '待处理举报', value: stats.value.pendingReportCount, icon: WarningFilled, color: '#F56C6C' },
   { label: '近7天新增用户', value: stats.value.recentUsers, icon: Plus, color: '#67C23A' },
   { label: '近30天活跃用户', value: stats.value.activeUsers, icon: DataAnalysis, color: '#9B59B6' },
 ])

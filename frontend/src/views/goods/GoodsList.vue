@@ -112,7 +112,7 @@ const goodsList = ref([])
 const total = ref(0)
 const loading = ref(false)
 
-function tagLabel(t) { const m = { borrow: '借用', gift: '赠送', exchange: '交换' }; return m[t] || t }
+function tagLabel(t) { const m = { sell: '出售', borrow: '借用', gift: '赠送', exchange: '交换' }; return m[t] || t }
 function getFirstImage(imgs) { if (Array.isArray(imgs)) return imgs[0]; return imgs?.split(',')[0] || '' }
 
 async function loadList() {
@@ -207,6 +207,7 @@ onMounted(() => loadList())
   &.tag-borrow { background: rgba(64,158,255,0.1); color: #409eff; }
   &.tag-gift { background: rgba(103,194,58,0.1); color: #67c23a; }
   &.tag-exchange { background: rgba(230,162,60,0.1); color: #e6a23c; }
+  &.tag-sell { background: rgba(245,108,108,0.1); color: #f56c6c; }
 }
 
 .gc-body { padding: 14px 16px 16px;

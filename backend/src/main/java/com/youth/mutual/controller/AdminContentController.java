@@ -29,15 +29,20 @@ public class AdminContentController {
     private final GoodsPostMapper goodsPostMapper;
     private final ActivityPostMapper activityPostMapper;
 
-    @Operation(summary = "获取待审核技能列表")
+    @Operation(summary = "获取技能列表")
     @GetMapping("/skills")
     @PreAuthorize("hasRole('ADMIN')")
     public R<PageResult<SkillPost>> getSkillPosts(
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword) {
         Page<SkillPost> page = new Page<>(pageNum, pageSize);
-        Page<SkillPost> result = skillPostMapper.selectPage(page,
-                new LambdaQueryWrapper<SkillPost>().orderByDesc(SkillPost::getCreatedAt));
+        LambdaQueryWrapper<SkillPost> w = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isBlank()) {
+            w.and(q -> q.like(SkillPost::getTitle, keyword).or().like(SkillPost::getDescription, keyword));
+        }
+        w.orderByDesc(SkillPost::getCreatedAt);
+        Page<SkillPost> result = skillPostMapper.selectPage(page, w);
         return R.ok(new PageResult<>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords()));
     }
 
@@ -58,10 +63,15 @@ public class AdminContentController {
     @PreAuthorize("hasRole('ADMIN')")
     public R<PageResult<GoodsPost>> getGoodsPosts(
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword) {
         Page<GoodsPost> page = new Page<>(pageNum, pageSize);
-        Page<GoodsPost> result = goodsPostMapper.selectPage(page,
-                new LambdaQueryWrapper<GoodsPost>().orderByDesc(GoodsPost::getCreatedAt));
+        LambdaQueryWrapper<GoodsPost> w = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isBlank()) {
+            w.and(q -> q.like(GoodsPost::getTitle, keyword).or().like(GoodsPost::getDescription, keyword));
+        }
+        w.orderByDesc(GoodsPost::getCreatedAt);
+        Page<GoodsPost> result = goodsPostMapper.selectPage(page, w);
         return R.ok(new PageResult<>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords()));
     }
 
@@ -82,10 +92,15 @@ public class AdminContentController {
     @PreAuthorize("hasRole('ADMIN')")
     public R<PageResult<ActivityPost>> getActivityPosts(
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword) {
         Page<ActivityPost> page = new Page<>(pageNum, pageSize);
-        Page<ActivityPost> result = activityPostMapper.selectPage(page,
-                new LambdaQueryWrapper<ActivityPost>().orderByDesc(ActivityPost::getCreatedAt));
+        LambdaQueryWrapper<ActivityPost> w = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isBlank()) {
+            w.and(q -> q.like(ActivityPost::getTitle, keyword).or().like(ActivityPost::getDescription, keyword));
+        }
+        w.orderByDesc(ActivityPost::getCreatedAt);
+        Page<ActivityPost> result = activityPostMapper.selectPage(page, w);
         return R.ok(new PageResult<>(result.getCurrent(), result.getSize(), result.getTotal(), result.getRecords()));
     }
 
@@ -94,10 +109,33 @@ public class AdminContentController {
     @PreAuthorize("hasRole('ADMIN')")
     public R<Void> offlineActivity(@PathVariable Long id) {
         ActivityPost post = activityPostMapper.selectById(id);
-        if (post != null) {
-            post.setStatus(0);
-            activityPostMapper.updateById(post);
-        }
+        if (post != null) { post.setStatus(0); activityPostMapper.updateById(post); }
+        return R.ok();
+    }
+
+    // ── 管理员删除（不检查所有权）──
+
+    @Operation(summary = "管理员删除技能")
+    @DeleteMapping("/skills/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<Void> deleteSkill(@PathVariable Long id) {
+        skillPostMapper.deleteById(id);
+        return R.ok();
+    }
+
+    @Operation(summary = "管理员删除物品")
+    @DeleteMapping("/goods/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<Void> deleteGoods(@PathVariable Long id) {
+        goodsPostMapper.deleteById(id);
+        return R.ok();
+    }
+
+    @Operation(summary = "管理员删除活动")
+    @DeleteMapping("/activities/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<Void> deleteActivity(@PathVariable Long id) {
+        activityPostMapper.deleteById(id);
         return R.ok();
     }
 }

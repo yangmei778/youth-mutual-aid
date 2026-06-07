@@ -9,8 +9,8 @@ import com.youth.mutual.common.result.ResultCode;
 import com.youth.mutual.service.CreditService;
 import com.youth.mutual.service.MessageService;
 import com.youth.mutual.dto.MutualRequestDTO;
-import com.youth.mutual.entity.MutualRecord;
-import com.youth.mutual.mapper.MutualRecordMapper;
+import com.youth.mutual.entity.*;
+import com.youth.mutual.mapper.*;
 import com.youth.mutual.service.MutualRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,10 @@ public class MutualRecordServiceImpl extends ServiceImpl<MutualRecordMapper, Mut
     private final MutualRecordMapper mutualRecordMapper;
     private final CreditService creditService;
     private final MessageService messageService;
+    private final UserMapper userMapper;
+    private final SkillPostMapper skillPostMapper;
+    private final GoodsPostMapper goodsPostMapper;
+    private final ActivityPostMapper activityPostMapper;
 
     @Override
     public Long createRequest(Long initiatorId, MutualRequestDTO dto) {
@@ -60,14 +64,20 @@ public class MutualRecordServiceImpl extends ServiceImpl<MutualRecordMapper, Mut
         record.setParticipantConfirmed(0);
         mutualRecordMapper.insert(record);
 
-        // 通知参与人有新的互助请求
-        String notifyContent = "您收到一条" + getTypeName(dto.getType()) + "互助请求";
-        if (dto.getRequestMessage() != null && !dto.getRequestMessage().isBlank()) {
-            notifyContent += "：" + dto.getRequestMessage();
-        }
+        // 获取请求者昵称和物品标题
+        User initiator = userMapper.selectById(initiatorId);
+        String initiatorName = initiator != null ? initiator.getNickname() : "用户";
+        String itemTitle = getItemTitle(dto.getType(), dto.getRelatedId());
+
+        // 通知：谁要什么 + 留言 + 跳转信息
+        String notifyTitle = initiatorName + " 想要" + itemTitle;
+        String notifyContent = (dto.getRequestMessage() != null && !dto.getRequestMessage().isBlank())
+                ? dto.getRequestMessage() : "对方未填写留言";
+        // type存储跳转类型（skill/goods/activity）+ 请求者ID，用|分割
+        String notifyType = dto.getType() + "|" + initiatorId + "|" + (dto.getRelatedId() != null ? dto.getRelatedId() : 0);
         messageService.createNotification(dto.getParticipantId(),
-                "收到互助请求", notifyContent,
-                "mutual_request", record.getId());
+                notifyTitle, notifyContent,
+                notifyType, (dto.getRelatedId() != null ? dto.getRelatedId() : 0L));
 
         return record.getId();
     }
@@ -236,5 +246,26 @@ public class MutualRecordServiceImpl extends ServiceImpl<MutualRecordMapper, Mut
             case "activity" -> "临时搭伴";
             default -> "互助";
         };
+    }
+
+    private String getItemTitle(String type, Long relatedId) {
+        if (relatedId == null) return "未知";
+        try {
+            return switch (type) {
+                case "skill" -> {
+                    SkillPost p = skillPostMapper.selectById(relatedId);
+                    yield p != null ? "「" + p.getTitle() + "」" : "该技能";
+                }
+                case "goods" -> {
+                    GoodsPost p = goodsPostMapper.selectById(relatedId);
+                    yield p != null ? "「" + p.getTitle() + "」" : "该物品";
+                }
+                case "activity" -> {
+                    ActivityPost p = activityPostMapper.selectById(relatedId);
+                    yield p != null ? "「" + p.getTitle() + "」" : "该活动";
+                }
+                default -> "该内容";
+            };
+        } catch (Exception e) { return "该内容"; }
     }
 }
