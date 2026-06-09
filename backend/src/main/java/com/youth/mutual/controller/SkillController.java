@@ -3,8 +3,11 @@ package com.youth.mutual.controller;
 import com.youth.mutual.auth.UserContext;
 import com.youth.mutual.common.result.PageResult;
 import com.youth.mutual.common.result.R;
+import com.youth.mutual.common.exception.BusinessException;
 import com.youth.mutual.dto.SkillPostRequest;
 import com.youth.mutual.entity.SkillPost;
+import com.youth.mutual.entity.User;
+import com.youth.mutual.mapper.UserMapper;
 import com.youth.mutual.service.SkillService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,11 +28,16 @@ public class SkillController {
 
     private final SkillService skillService;
     private final UserContext userContext;
+    private final UserMapper userMapper;
 
     @Operation(summary = "发布技能")
     @PostMapping("/posts")
     public R<Long> publishSkill(@Valid @RequestBody SkillPostRequest request) {
         Long userId = userContext.getRequiredUserId();
+        User user = userMapper.selectById(userId);
+        if (user != null && user.getStatus() != null && user.getStatus() != 1) {
+            throw new BusinessException("您的账号已被封禁，无法发布");
+        }
         Long id = skillService.publishSkill(userId, request);
         return R.ok(id);
     }

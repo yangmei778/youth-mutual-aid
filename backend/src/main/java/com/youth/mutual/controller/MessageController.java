@@ -97,4 +97,20 @@ public class MessageController {
         messageService.markAllMessagesRead(userId, targetUserId);
         return R.ok();
     }
+
+    @Operation(summary = "删除通知")
+    @DeleteMapping("/notifications/{id}")
+    public R<Void> deleteNotification(@PathVariable Long id) {
+        Long userId = userContext.getRequiredUserId();
+        messageService.deleteNotification(userId, id);
+        return R.ok();
+    }
+
+    @Operation(summary = "删除私信")
+    @DeleteMapping("/messages/{id}")
+    public R<Void> deleteMessage(@PathVariable Long id) {
+        Long userId = userContext.getRequiredUserId();
+        messageService.deleteMessage(userId, id);
+        return R.ok();
+    }
 }

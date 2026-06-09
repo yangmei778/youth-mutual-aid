@@ -38,4 +38,10 @@ public interface MessageService {
 
     /** 标记某会话全部已读 */
     void markAllMessagesRead(Long userId, Long targetUserId);
+
+    /** 删除通知 */
+    void deleteNotification(Long userId, Long notificationId);
+
+    /** 删除私信 */
+    void deleteMessage(Long userId, Long messageId);
 }

@@ -34,7 +34,7 @@
         <el-table-column prop="createdAt" label="注册时间" width="170" />
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="row.status===1" type="danger" size="small" plain @click="handleUpdateStatus(row.id,'banned')">封禁</el-button>
+            <el-button v-if="row.status===1" type="danger" size="small" plain @click="handleUpdateStatus(row.id,0)">封禁</el-button>
             <el-button v-else type="success" size="small" plain @click="handleUpdateStatus(row.id,1)">解封</el-button>
           </template>
         </el-table-column>
@@ -64,7 +64,7 @@ async function fetchUsers() {
   } catch {} finally { loading.value = false }
 }
 async function handleUpdateStatus(id, status) {
-  try { await ElMessageBox.confirm(`确定${status==='banned'?'封禁':'解封'}此用户？`, '确认', { type: 'warning' }) } catch { return }
+  try { await ElMessageBox.confirm(`确定${status===0?'封禁':'解封'}此用户？`, '确认', { type: 'warning' }) } catch { return }
   try { await adminApi.updateUserStatus(id, status); ElMessage.success('操作成功'); fetchUsers() } catch {}
 }
 onMounted(() => fetchUsers())

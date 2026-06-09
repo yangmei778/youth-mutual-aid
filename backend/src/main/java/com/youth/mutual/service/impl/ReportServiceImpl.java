@@ -33,6 +33,11 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public void submitReport(Long reporterId, String targetType, Long targetId, String reason, String description) {
+        // 不能举报自己
+        Long ownerId = findOwnerId(targetType, targetId);
+        if (ownerId != null && ownerId.equals(reporterId)) {
+            throw new BusinessException(400, "不能举报自己的内容");
+        }
         // 检查重复举报
         Long count = reportMapper.selectCount(
                 new LambdaQueryWrapper<Report>()
@@ -109,12 +114,12 @@ public class ReportServiceImpl implements ReportService {
         report.setHandleNote(handleNote);
         reportMapper.updateById(report);
 
-        // 通知举报人处理结果（简洁）
+        // 通知举报人处理结果（可点击查看被举报内容）
         String resultText = "approved".equals(status) ? "举报通过，违规内容已处理" : "举报被驳回";
         messageService.createNotification(report.getReporterId(),
                 "举报处理结果",
-                resultText,
-                "report_result", report.getId());
+                resultText + "（" + getTargetTypeName(report.getTargetType()) + "）",
+                "report_result|" + report.getTargetType(), report.getTargetId());
 
         // 如果确认违规：下架 + 扣分 + 通知被举报者
         if ("approved".equals(status)) {
@@ -165,6 +170,19 @@ public class ReportServiceImpl implements ReportService {
             case "user" -> "用户";
             default -> "内容";
         };
+    }
+
+    /** 根据类型和ID查内容所有者 */
+    private Long findOwnerId(String targetType, Long targetId) {
+        if ("user".equals(targetType)) return targetId;
+        try {
+            return switch (targetType) {
+                case "skill" -> { SkillPost p = skillPostMapper.selectById(targetId); yield p != null ? p.getUserId() : null; }
+                case "goods" -> { GoodsPost p = goodsPostMapper.selectById(targetId); yield p != null ? p.getUserId() : null; }
+                case "activity" -> { ActivityPost p = activityPostMapper.selectById(targetId); yield p != null ? p.getUserId() : null; }
+                default -> null;
+            };
+        } catch (Exception e) { return null; }
     }
 
     /** 根据举报类型找到被举报内容对应的用户ID */

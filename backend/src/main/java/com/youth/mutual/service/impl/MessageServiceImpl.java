@@ -194,4 +194,18 @@ public class MessageServiceImpl implements MessageService {
         notification.setIsRead(0);
         notificationMapper.insert(notification);
     }
+
+    @Override
+    public void deleteNotification(Long userId, Long notificationId) {
+        notificationMapper.delete(new LambdaQueryWrapper<Notification>()
+                .eq(Notification::getId, notificationId)
+                .eq(Notification::getUserId, userId));
+    }
+
+    @Override
+    public void deleteMessage(Long userId, Long messageId) {
+        messageMapper.delete(new LambdaQueryWrapper<Message>()
+                .eq(Message::getId, messageId)
+                .and(w -> w.eq(Message::getSenderId, userId).or().eq(Message::getReceiverId, userId)));
+    }
 }

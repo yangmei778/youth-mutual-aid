@@ -218,6 +218,16 @@ export const messageApi = {
   markAllMessagesRead(targetUserId) {
     return request.put('/v1/messages/read-all', null, { params: { targetUserId } })
   },
+
+  /** 删除通知 */
+  deleteNotification(id) {
+    return request.delete(`/v1/notifications/${id}`)
+  },
+
+  /** 删除私信 */
+  deleteMessage(id) {
+    return request.delete(`/v1/messages/${id}`)
+  },
 }
 
 /**

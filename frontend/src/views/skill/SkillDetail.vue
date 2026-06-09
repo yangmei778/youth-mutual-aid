@@ -1,7 +1,11 @@
 <template>
   <div class="skill-detail page-container">
     <div v-loading="loading" class="detail-content">
-      <el-empty v-if="!loading && !skill" description="技能信息不存在" />
+      <el-empty v-if="!loading && !skill" description="此内容已被删除或下架">
+        <template v-if="reportReason" #default>
+          <p style="color:#909399;font-size:13px;margin-top:8px">{{ reportReason }}</p>
+        </template>
+      </el-empty>
 
       <template v-if="skill">
         <div class="page-header">
@@ -83,7 +87,7 @@
 
               <div class="action-bar">
                 <!-- 已下架：只显示返回 -->
-                <template v-if="isOffline">
+                <template v-if="isOffline || reportReason">
                   <el-button size="large" @click="router.push('/skill')">返回列表</el-button>
                 </template>
                 <template v-else>

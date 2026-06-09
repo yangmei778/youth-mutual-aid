@@ -66,11 +66,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultCode.LOGIN_FAIL);
         }
 
-        // 检查状态
-        if (user.getStatus() == 0) {
-            throw new BusinessException(ResultCode.ACCOUNT_DISABLED);
-        }
-
         // 更新登录时间
         user.setLastLoginTime(LocalDateTime.now());
         userMapper.updateById(user);

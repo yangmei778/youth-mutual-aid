@@ -3,7 +3,10 @@ package com.youth.mutual.controller;
 import com.youth.mutual.auth.UserContext;
 import com.youth.mutual.common.result.PageResult;
 import com.youth.mutual.common.result.R;
+import com.youth.mutual.common.exception.BusinessException;
 import com.youth.mutual.entity.GoodsPost;
+import com.youth.mutual.entity.User;
+import com.youth.mutual.mapper.UserMapper;
 import com.youth.mutual.service.GoodsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,11 +24,16 @@ public class GoodsController {
 
     private final GoodsService goodsService;
     private final UserContext userContext;
+    private final UserMapper userMapper;
 
     @Operation(summary = "发布物品")
     @PostMapping("/posts")
     public R<Long> publishGoods(@RequestBody GoodsPost goodsPost) {
         Long userId = userContext.getRequiredUserId();
+        User user = userMapper.selectById(userId);
+        if (user != null && user.getStatus() != null && user.getStatus() != 1) {
+            throw new BusinessException("您的账号已被封禁，无法发布");
+        }
         Long id = goodsService.publishGoods(userId, goodsPost);
         return R.ok(id);
     }

@@ -50,8 +50,15 @@
                 <span class="ncard-hint">点击查看 →</span>
               </div>
               <div class="ncard-right">
-                <span v-if="!item.isRead" class="unread-dot"></span>
+                <span v-if="isNotifUnread(item)" class="unread-dot"></span>
                 <span class="ncard-type">{{ typeLabel(item.type) }}</span>
+                <div class="ncard-del-wrap">
+                  <el-button text size="small" class="ncard-del-btn" @click.stop="deleteNotif(item)" title="删除此通知">
+                    <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                      <polyline points="3 5 5 5 15 5"/><path d="M6 5V4a1 1 0 011-1h4a1 1 0 011 1v1"/><line x1="7" y1="8" x2="7" y2="13"/><line x1="11" y1="8" x2="11" y2="13"/><path d="M5 5l1 10h6l1-10"/>
+                    </svg>
+                  </el-button>
+                </div>
               </div>
             </div>
             <div v-if="!notifLoading && notifications.length === 0" class="empty-state">
@@ -149,7 +156,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { messageApi } from '@/api'
 
@@ -172,6 +179,9 @@ function canNavigate(item) {
   return t.startsWith('reported|') || t.startsWith('content_offline|') || t.includes('activity_') || t.includes('mutual_')
 }
 function isNotifUnread(item) { return !item.isRead && !readIds.value.includes(item.id) }
+async function deleteNotif(item) {
+  try { await messageApi.deleteNotification(item.id); fetchNotifications(); refreshUnread() } catch {}
+}
 function notifCardClass(item) {
   const t = item.type || ''
   if (t.startsWith('reported|')) return 'notif-warn'
@@ -193,15 +203,15 @@ function handleNotifClick(item) {
   const t = item.type || ''
   const rid = item.relatedId
 
-  // 被举报 / 被下架 → 跳转到内容，带原因参数
-  if (t.startsWith('reported|') || t.startsWith('content_offline|')) {
+  // 被举报 / 被下架 / 举报结果 → 跳转到对应内容
+  if (t.startsWith('reported|') || t.startsWith('content_offline|') || t.startsWith('report_result|')) {
     const targetType = t.split('|')[1]
     const routeMap = { skill: '/skill/', goods: '/goods/', activity: '/activity/' }
-    if (rid && targetType) {
-      router.push({ path: (routeMap[targetType] || '/skill/') + rid, query: { reason: item.content || '' } })
-    }
+    if (rid && targetType) router.push((routeMap[targetType] || '/skill/') + rid + '?reason=' + encodeURIComponent(item.content || ''))
     return
   }
+  // 旧格式report_result不跳转
+  if (t === 'report_result') return
 
   // 互助请求 → 跳转到内容详情
   if (isRequest(t)) {
@@ -227,7 +237,14 @@ function handleNotifClick(item) {
     return
   }
 
-  // 举报处理结果 → 留在消息页（无内容可跳）
+  // 举报处理结果 → 跳转到被举报的内容（仅新格式 report_result|type）
+  if (t.startsWith('report_result|')) {
+    const targetType = t.split('|')[1]
+    const routeMap = { skill: '/skill/', goods: '/goods/', activity: '/activity/' }
+    if (rid && targetType) router.push((routeMap[targetType] || '/skill/') + rid + '?reason=' + encodeURIComponent(item.content || ''))
+    return
+  }
+  // 旧格式 report_result 不跳转（relatedId是reportId不是postId）
   if (t === 'report_result') return
 }
 function goToItem(item) {
@@ -413,6 +430,7 @@ onMounted(async () => {
 .notif-list { flex: 1; overflow-y: auto; padding: 12px 20px; }
 
 .notif-card {
+  position: relative;
   display: flex; gap: 14px; padding: 14px 16px; border-radius: 12px;
   cursor: pointer; transition: all 0.2s; margin-bottom: 4px;
   &:hover { background: #f8f9fb; }
@@ -435,6 +453,13 @@ onMounted(async () => {
 .ncard-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary-color); margin-top: 4px; }
 .ncard-type { font-size: 11px; color: #909399; background: #f5f6f8; padding: 2px 8px; border-radius: 6px; }
+.ncard-del-wrap { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); opacity: 0; transition: all 0.25s ease; }
+.notif-card:hover .ncard-del-wrap { opacity: 1; }
+.ncard-del-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; color: #b0b8c4; transition: all 0.2s;
+  &:hover { background: #fef0f0; color: #f56c6c; transform: scale(1.08); }
+}
 .ncard-hint { font-size: 12px; color: var(--primary-color); font-weight: 500; display: block; margin-top: 6px; }
 
 /* ====== 聊天面板 ====== */
