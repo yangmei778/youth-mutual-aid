@@ -257,8 +257,8 @@ function handleCommand(command) {
     font-weight: 500;
   }
   .admin-badge {
-    font-size: 12px; font-weight: 600; color: #f56c6c;
-    background: rgba(245,108,108,0.08); padding: 2px 10px; border-radius: 8px;
+    font-size: 12px; font-weight: 600; color: #555;
+    background: #e5e7eb; padding: 2px 10px; border-radius: 8px;
   }
 }
 

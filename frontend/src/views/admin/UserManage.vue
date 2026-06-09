@@ -10,8 +10,16 @@
       </div>
     </div>
 
+    <!-- 批量操作栏 -->
+    <div v-if="selectedUsers.length" class="batch-bar">
+      <span>已选 {{ selectedUsers.length }} 人</span>
+      <el-button type="danger" size="small" @click="batchBan(0)">批量封禁</el-button>
+      <el-button type="success" size="small" @click="batchBan(1)">批量解封</el-button>
+    </div>
+
     <div class="ap-card">
-      <el-table :data="userList" v-loading="loading" stripe class="modern-table">
+      <el-table :data="userList" v-loading="loading" stripe class="modern-table" @selection-change="onUserSelect">
+        <el-table-column type="selection" width="45" />
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="用户" min-width="180">
           <template #default="{ row }">
@@ -25,13 +33,19 @@
           </template>
         </el-table-column>
         <el-table-column prop="city" label="城市" width="100" />
-        <el-table-column prop="creditScore" label="信用分" width="90" />
+        <el-table-column label="信用分" width="90">
+          <template #default="{ row }">
+            <span :style="{ color: creditColor(row.creditScore), fontWeight: '700' }">{{ row.creditScore || 0 }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="row.status===1?'success':'danger'" size="small" effect="dark" round>{{ row.status===1?'正常':'封禁' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="170" />
+        <el-table-column label="注册时间" width="140">
+          <template #default="{ row }"><span :title="row.createdAt">{{ relativeTime(row.createdAt) }}</span></template>
+        </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.status===1" type="danger" size="small" plain @click="handleUpdateStatus(row.id,0)">封禁</el-button>
@@ -48,12 +62,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { Search } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const keyword = ref(''); const userList = ref([]); const total = ref(0)
-const loading = ref(false); const page = ref(1); const pageSize = ref(10)
+const loading = ref(false); const page = ref(1); const pageSize = ref(10); const selectedUsers = ref([])
+function onUserSelect(val) { selectedUsers.value = val }
+
+function creditColor(s) { if(!s)return'#909399';if(s>=60)return'#67c23a';if(s>=30)return'#e6a23c';return'#f56c6c' }
+function relativeTime(t) { if(!t)return'';const d=new Date(t),n=new Date(),diff=n-d;if(diff<3600000)return Math.floor(diff/60000)+'分钟前';if(diff<86400000)return Math.floor(diff/3600000)+'小时前';if(diff<604800000)return Math.floor(diff/86400000)+'天前';return t.slice(0,10) }
 
 async function fetchUsers() {
   loading.value = true
@@ -64,9 +83,16 @@ async function fetchUsers() {
   } catch {} finally { loading.value = false }
 }
 async function handleUpdateStatus(id, status) {
-  try { await ElMessageBox.confirm(`确定${status===0?'封禁':'解封'}此用户？`, '确认', { type: 'warning' }) } catch { return }
+  try { await showConfirm(`确定${status===0?'封禁':'解封'}此用户？`, '用户管理') } catch { return }
   try { await adminApi.updateUserStatus(id, status); ElMessage.success('操作成功'); fetchUsers() } catch {}
 }
+async function batchBan(status) {
+  const label = status === 0 ? '封禁' : '解封'
+  try { await showConfirm(`确定批量${label} ${selectedUsers.value.length} 名用户？`, '批量操作') } catch { return }
+  for (const u of selectedUsers.value) { try { await adminApi.updateUserStatus(u.id, status) } catch {} }
+  ElMessage.success(`批量${label}完成`); selectedUsers.value = []; fetchUsers()
+}
+
 onMounted(() => fetchUsers())
 </script>
 

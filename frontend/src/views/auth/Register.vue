@@ -114,6 +114,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { Connection, User, Lock, CircleCheck, Edit, Collection, Present } from '@element-plus/icons-vue'
 import { areaData } from '@/utils/china-area'
 

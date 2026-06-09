@@ -190,7 +190,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { goodsApi, mutualApi, reportApi } from '@/api'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { View, ChatDotRound, Box, WarningFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -280,7 +281,7 @@ async function submitRequest() {
 
 const offlining = ref(false)
 async function handleOffline() {
-  try { await ElMessageBox.confirm('确定要下架这个物品吗？下架后其他用户将无法看到。', '确认下架', { type: 'warning' }) }
+  try { await showConfirm('下架后其他用户将无法看到此物品', '确认下架') }
   catch { return }
   offlining.value = true
   try {
@@ -293,7 +294,7 @@ async function handleOffline() {
 
 const deleting = ref(false)
 async function handleDelete() {
-  try { await ElMessageBox.confirm('确定要永久删除这个物品吗？此操作不可恢复。', '确认删除', { type: 'error', confirmButtonText: '删除' }) }
+  try { await showConfirm('永久删除此物品？此操作不可恢复', '确认删除', 'danger') }
   catch { return }
   deleting.value = true
   try { await goodsApi.deleteGoods(goods.value.id); ElMessage.success('已删除'); router.push('/goods') }

@@ -411,6 +411,10 @@ export const adminApi = {
   handleReport(id, data) {
     return request.put(`/v1/admin/reports/${id}/handle`, data)
   },
+  /** 删除举报记录 */
+  deleteReport(id) {
+    return request.delete(`/v1/admin/reports/${id}`)
+  },
 }
 
 /**

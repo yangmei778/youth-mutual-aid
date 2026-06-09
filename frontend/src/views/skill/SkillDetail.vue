@@ -192,7 +192,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { skillApi, mutualApi, reportApi, adminApi } from '@/api'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { ArrowLeft, View, Star, ChatDotRound, WarningFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -208,12 +209,12 @@ const reportReason = computed(() => route.query.reason || '')
 // 管理员操作
 const adminOfflining = ref(false)
 async function adminOffline() {
-  try { await ElMessageBox.confirm('管理员下架此技能？', '管理操作', { type: 'warning' }) } catch { return }
+  try { await showConfirm('管理员下架此技能？', '管理操作') } catch { return }
   adminOfflining.value = true
   try { await adminApi.offlineSkill(skill.value.id); ElMessage.success('已下架'); fetchDetail() } catch {} finally { adminOfflining.value = false }
 }
 async function adminDelete() {
-  try { await ElMessageBox.confirm('管理员永久删除此技能？不可恢复。', '管理操作', { type: 'error', confirmButtonText: '删除' }) } catch { return }
+  try { await showConfirm('管理员永久删除此技能？不可恢复', '管理操作', 'danger') } catch { return }
   try { await adminApi.deleteSkill(skill.value.id); ElMessage.success('已删除'); router.push('/skill') } catch {}
 }
 
@@ -303,7 +304,7 @@ async function handleReport() {
 // ====== 下架技能 ======
 const offlining = ref(false)
 async function handleOffline() {
-  try { await ElMessageBox.confirm('确定要下架这个技能吗？下架后其他用户将无法看到。', '确认下架', { type: 'warning' }) }
+  try { await showConfirm('下架后其他用户将无法看到此技能', '确认下架') }
   catch { return }
   offlining.value = true
   try {
@@ -321,7 +322,7 @@ function contactPublisher() {
 // ====== 删除技能 ======
 const deleting = ref(false)
 async function handleDelete() {
-  try { await ElMessageBox.confirm('确定要永久删除这个技能吗？此操作不可恢复。', '确认删除', { type: 'error', confirmButtonText: '删除' }) }
+  try { await showConfirm('永久删除此技能？此操作不可恢复', '确认删除', 'danger') }
   catch { return }
   deleting.value = true
   try {

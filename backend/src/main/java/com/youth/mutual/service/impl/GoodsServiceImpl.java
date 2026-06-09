@@ -59,7 +59,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsPostMapper, GoodsPost> im
         if (StringUtils.hasText(category)) wrapper.eq(GoodsPost::getCategory, category);
         if (StringUtils.hasText(exchangeType)) wrapper.eq(GoodsPost::getExchangeType, exchangeType);
         if (StringUtils.hasText(keyword)) {
-            wrapper.and(w -> w.like(GoodsPost::getTitle, keyword).or().like(GoodsPost::getDescription, keyword));
+            wrapper.and(w -> w.like(GoodsPost::getTitle, keyword).or().like(GoodsPost::getDescription, keyword).or().like(GoodsPost::getCategory, keyword));
         }
         if (StringUtils.hasText(city)) {
             List<Long> cityUserIds = userMapper.selectList(

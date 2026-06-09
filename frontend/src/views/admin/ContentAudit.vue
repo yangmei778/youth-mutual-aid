@@ -7,6 +7,12 @@
       </div>
     </div>
 
+    <!-- 批量操作栏 -->
+    <div v-if="selectedSkills.length || selectedGoods.length || selectedActivities.length" class="batch-bar">
+      <span>已选 {{ selectedSkills.length + selectedGoods.length + selectedActivities.length }} 项</span>
+      <el-button type="danger" size="small" @click="batchDelete">批量删除</el-button>
+    </div>
+
     <div class="ap-card">
       <!-- 搜索栏 -->
       <div class="audit-search">
@@ -15,7 +21,16 @@
       </div>
       <el-tabs v-model="activeTab" class="modern-tabs" @tab-change="fetchAll">
         <el-tab-pane label="技能" name="skill">
-          <el-table :data="skillList" v-loading="skillLoading" stripe class="modern-table">
+          <el-table ref="skillTableRef" :data="skillList" v-loading="skillLoading" stripe class="modern-table" @selection-change="onSkillSelect">
+            <el-table-column type="selection" width="45" />
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <div class="expand-preview">
+                  <div v-if="row.description" class="ep-section"><strong>描述：</strong>{{ row.description }}</div>
+                  <div class="ep-section"><strong>分类：</strong>{{ row.category }} · <strong>类型：</strong>{{ row.type==='teach'?'能教':'想学' }} · <strong>时间：</strong>{{ row.availableTime||'未指定' }}</div>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column prop="id" label="ID" width="70" />
             <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
             <el-table-column prop="category" label="分类" width="100" />
@@ -32,13 +47,23 @@
                   <el-button type="danger" size="small" @click="handleDelete('skill',row.id)">删除</el-button>
                 </template>
                 <span v-else class="handled-text">已处理</span>
+                <el-button v-if="row.status!==1" text type="danger" size="small" @click="handleDelete(activeTab, row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
 
         <el-tab-pane label="物品" name="goods">
-          <el-table :data="goodsList" v-loading="goodsLoading" stripe class="modern-table">
+          <el-table :data="goodsList" v-loading="goodsLoading" stripe class="modern-table" @selection-change="onGoodsSelect">
+            <el-table-column type="selection" width="45" />
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <div class="expand-preview">
+                  <div v-if="row.description" class="ep-section"><strong>描述：</strong>{{ row.description }}</div>
+                  <div class="ep-section"><strong>交换方式：</strong>{{ row.exchangeType }} · <strong>新旧：</strong>{{ row.conditionLevel }}/10</div>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column prop="id" label="ID" width="70" />
             <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
             <el-table-column prop="category" label="分类" width="100" />
@@ -55,13 +80,23 @@
                   <el-button type="danger" size="small" @click="handleDelete('goods',row.id)">删除</el-button>
                 </template>
                 <span v-else class="handled-text">已处理</span>
+                <el-button v-if="row.status!==1" text type="danger" size="small" @click="handleDelete(activeTab, row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
 
         <el-tab-pane label="活动" name="activity">
-          <el-table :data="activityList" v-loading="activityLoading" stripe class="modern-table">
+          <el-table :data="activityList" v-loading="activityLoading" stripe class="modern-table" @selection-change="onActivitySelect">
+            <el-table-column type="selection" width="45" />
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <div class="expand-preview">
+                  <div v-if="row.description" class="ep-section"><strong>描述：</strong>{{ row.description }}</div>
+                  <div class="ep-section"><strong>时间：</strong>{{ row.activityTime }} · <strong>地点：</strong>{{ row.location }} · <strong>人数：</strong>{{ row.currentMembers }}/{{ row.maxMembers }}</div>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column prop="id" label="ID" width="70" />
             <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
             <el-table-column prop="type" label="类型" width="100" />
@@ -78,6 +113,7 @@
                   <el-button type="danger" size="small" @click="handleDelete('activity',row.id)">删除</el-button>
                 </template>
                 <span v-else class="handled-text">已处理</span>
+                <el-button v-if="row.status!==1" text type="danger" size="small" @click="handleDelete(activeTab, row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -89,7 +125,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { Search } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
@@ -98,6 +135,10 @@ const searchKeyword = ref('')
 const skillList = ref([]); const goodsList = ref([]); const activityList = ref([])
 const skillLoading = ref(false); const goodsLoading = ref(false); const activityLoading = ref(false)
 const skillTotal = ref(0); const goodsTotal = ref(0); const activityTotal = ref(0)
+const selectedSkills = ref([]); const selectedGoods = ref([]); const selectedActivities = ref([])
+function onSkillSelect(val) { selectedSkills.value = val }
+function onGoodsSelect(val) { selectedGoods.value = val }
+function onActivitySelect(val) { selectedActivities.value = val }
 const totalCount = computed(() => skillTotal.value + goodsTotal.value + activityTotal.value)
 
 function fetchAll() { fetchData(activeTab.value) }
@@ -109,7 +150,7 @@ async function fetchData(type) {
   if (type === 'activity') { activityLoading.value = true; try { const r = await adminApi.getActivities(params); activityList.value = r.data?.records || r.data?.data?.records || []; activityTotal.value = r.data?.total || r.data?.data?.total || 0 } catch {} finally { activityLoading.value = false } }
 }
 async function handleOffline(type, id) {
-  try { await ElMessageBox.confirm('确定下架此内容？', '确认', { type: 'warning' }) } catch { return }
+  try { await showConfirm('确定下架此内容？', '确认') } catch { return }
   try {
     if (type === 'skill') await adminApi.offlineSkill(id)
     if (type === 'goods') await adminApi.offlineGoods(id)
@@ -118,7 +159,7 @@ async function handleOffline(type, id) {
   } catch {}
 }
 async function handleDelete(type, id) {
-  try { await ElMessageBox.confirm('确定永久删除此内容？不可恢复。', '确认删除', { type: 'error', confirmButtonText: '删除' }) } catch { return }
+  try { await showConfirm('永久删除此内容？不可恢复', '确认删除', 'danger') } catch { return }
   try {
     if (type === 'skill') await adminApi.deleteSkill(id)
     if (type === 'goods') await adminApi.deleteGoods(id)
@@ -126,6 +167,19 @@ async function handleDelete(type, id) {
     ElMessage.success('已删除'); fetchData(type)
   } catch {}
 }
+async function batchDelete() {
+  const all = [...selectedSkills.value, ...selectedGoods.value, ...selectedActivities.value]
+  if (!all.length) return
+  try { await showConfirm(`确定批量删除 ${all.length} 条内容？不可恢复`, '批量删除', 'danger') } catch { return }
+  for (const item of all) {
+    try { if (activeTab.value === 'skill') await adminApi.deleteSkill(item.id)
+      else if (activeTab.value === 'goods') await adminApi.deleteGoods(item.id)
+      else await adminApi.deleteActivity(item.id)
+    } catch {}
+  }
+  ElMessage.success('批量删除完成'); fetchAll()
+}
+
 onMounted(() => { fetchData('skill'); fetchData('goods'); fetchData('activity') })
 </script>
 
@@ -133,6 +187,7 @@ onMounted(() => { fetchData('skill'); fetchData('goods'); fetchData('activity') 
 .admin-page { max-width: 100%; }
 .ap-hero { margin-bottom: 20px; h2 { font-size: 22px; font-weight: 800; margin: 0; } p { font-size: 14px; color: #909399; margin: 4px 0 0; } }
 .ap-card { background: #fff; border: 1px solid #edf0f4; border-radius: 16px; padding: 20px 24px; }
+.batch-bar { display: flex; align-items: center; gap: 14px; padding: 12px 20px; margin-bottom: 14px; background: #fef0f0; border: 1px solid #fbc4c4; border-radius: 12px; font-size: 14px; font-weight: 600; }
 .modern-tabs { :deep(.el-tabs__header) { margin-bottom: 12px; } }
 .modern-table {
   :deep(th) { font-weight: 700; color: var(--text-primary); background: #f8f9fb; border: none; }
@@ -142,4 +197,7 @@ onMounted(() => { fetchData('skill'); fetchData('goods'); fetchData('activity') 
 .handled-text { font-size: 13px; color: #b0b8c4; }
 .audit-search { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .audit-count { font-size: 13px; color: #909399; }
+.expand-preview { padding: 8px 0 8px 40px; font-size: 13px; color: var(--text-regular); line-height: 1.7;
+  .ep-section { margin-bottom: 6px; strong { color: var(--text-primary); } }
+}
 </style>

@@ -13,4 +13,7 @@ public interface ReportService {
 
     /** 管理员处理举报 */
     void handleReport(Long handlerId, Long reportId, String status, String handleNote, Integer deductCredit);
+
+    /** 管理员删除举报记录 */
+    void deleteReport(Long id);
 }

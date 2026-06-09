@@ -103,6 +103,11 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public void deleteReport(Long id) {
+        reportMapper.deleteById(id);
+    }
+
+    @Override
     @Transactional
     public void handleReport(Long handlerId, Long reportId, String status, String handleNote, Integer deductCredit) {
         Report report = reportMapper.selectById(reportId);

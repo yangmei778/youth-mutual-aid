@@ -1,5 +1,4 @@
 package com.youth.mutual.entity;
-
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
@@ -25,6 +24,10 @@ public class ActivityPost {
     private Integer maxMembers;
     private Integer currentMembers;
     private String costDesc;
+    @TableField(exist = false)
+    private Integer minMembers;
+    @TableField(exist = false)
+    private String contact;
     private Integer isAnonymous;
     private Integer status;
     private Integer viewCount;

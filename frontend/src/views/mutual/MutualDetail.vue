@@ -118,7 +118,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { mutualApi, reviewApi } from '@/api'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { Clock, Connection, CircleCheck, CircleClose, QuestionFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -252,7 +253,7 @@ async function handleAccept() {
 
 async function handleReject() {
   try {
-    await ElMessageBox.confirm('确定拒绝此互助请求？', '拒绝确认', { type: 'warning' })
+    await showConfirm('确定拒绝此互助请求？', '拒绝确认')
     operating.value = true
     await mutualApi.rejectRequest(route.params.id)
     ElMessage.success('已拒绝互助请求')
@@ -267,7 +268,7 @@ async function handleReject() {
 async function handleConfirm() {
   if (myConfirmed.value) return
   try {
-    await ElMessageBox.confirm('确认互助已完成？双方确认后将获得信用分奖励。', '确认完成', { type: 'info' })
+    await showConfirm('确认互助已完成？双方确认后将获得信用分奖励', '确认完成')
     operating.value = true
     await mutualApi.confirmComplete(route.params.id)
     ElMessage.success('已确认互助完成')
@@ -282,7 +283,7 @@ async function handleConfirm() {
 
 async function handleCancel() {
   try {
-    await ElMessageBox.confirm('确定取消此互助？取消后不可恢复。', '取消确认', { type: 'warning' })
+    await showConfirm('确定取消此互助？取消后不可恢复', '取消确认')
     operating.value = true
     await mutualApi.cancelRecord(route.params.id)
     ElMessage.success('已取消互助')

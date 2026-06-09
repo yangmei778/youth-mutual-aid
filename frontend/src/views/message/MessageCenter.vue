@@ -30,10 +30,15 @@
         <div v-if="activeTab === 'notification'" class="notif-panel">
           <div class="panel-head">
             <h3>系统通知</h3>
-            <el-button v-if="hasUnread" text type="primary" size="small" @click="handleMarkAllRead">全部已读</el-button>
+            <div style="display:flex;gap:8px">
+              <el-button v-if="selectedNotifs.length" text type="danger" size="small" @click="batchDeleteNotifs">删除选中({{ selectedNotifs.length }})</el-button>
+              <el-button v-if="hasUnread" text type="primary" size="small" @click="handleMarkAllRead">全部已读</el-button>
+              <el-button text size="small" @click="notifSelectMode = !notifSelectMode">{{ notifSelectMode ? '取消' : '管理' }}</el-button>
+            </div>
           </div>
           <div class="notif-list" v-loading="notifLoading">
-            <div v-for="item in notifications" :key="item.id" class="notif-card" :class="[isNotifUnread(item) ? 'unread' : '', isNotifUnread(item) ? notifCardClass(item) : '']">
+            <div v-for="item in notifications" :key="item.id" class="notif-card" :class="[isNotifUnread(item) ? 'unread' : '', isNotifUnread(item) ? notifCardClass(item) : '', selectedNotifs.includes(item) ? 'selected' : '']" @click="notifSelectMode ? toggleNotif(item) : handleNotifClick(item)">
+              <el-checkbox v-if="notifSelectMode" :model-value="selectedNotifs.includes(item)" class="ncard-check" />
               <div class="ncard-left">
                 <div class="ncard-icon" :class="iconClass(item.type)">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -43,7 +48,7 @@
                   </svg>
                 </div>
               </div>
-              <div class="ncard-body" @click="handleNotifClick(item)">
+              <div class="ncard-body">
                 <div class="ncard-title">{{ item.title }}</div>
                 <div class="ncard-text" v-if="item.content">{{ item.content }}</div>
                 <div class="ncard-time">{{ formatNotifTime(item.createdAt) }}</div>
@@ -159,6 +164,7 @@ import { ElMessage } from 'element-plus'
 import { Search, Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { messageApi } from '@/api'
+import { showConfirm } from '@/utils/confirm'
 
 const route = useRoute()
 const router = useRouter()
@@ -169,7 +175,13 @@ const activeTab = ref('notification')
 // ====== 通知 ======
 const notifications = ref([])
 const readIds = ref([]) // 本地已读缓存（响应式数组）
-const notifLoading = ref(false)
+const notifLoading = ref(false); const notifSelectMode = ref(false); const selectedNotifs = ref([])
+function toggleNotif(item) { const i = selectedNotifs.value.indexOf(item); if (i > -1) selectedNotifs.value.splice(i, 1); else selectedNotifs.value.push(item) }
+async function batchDeleteNotifs() {
+  try { await showConfirm(`确定批量删除 ${selectedNotifs.value.length} 条通知？`, '批量删除', 'danger') } catch { return }
+  for (const n of selectedNotifs.value) { try { await messageApi.deleteNotification(n.id) } catch {} }
+  ElMessage.success('删除完成'); selectedNotifs.value = []; notifSelectMode.value = false; fetchNotifications(); refreshUnread()
+}
 const hasUnread = computed(() => notifications.value.some(n => isNotifUnread(n)))
 const notifUnread = computed(() => notifications.value.filter(n => !n.isRead).length)
 
@@ -437,7 +449,9 @@ onMounted(async () => {
   &.unread { background: #f0f5ff; border-left: 3px solid var(--primary-color); padding-left: 13px; }
   &.notif-warn { border-left: 3px solid #e6a23c; background: #fef9e7; padding-left: 13px; }
   &.notif-danger { border-left: 3px solid #f56c6c; background: #fef0f0; padding-left: 13px; }
+  &.selected { border: 2px solid var(--primary-color) !important; background: rgba(64,158,255,0.04); }
 }
+.ncard-check { position: absolute; top: 14px; right: 14px; z-index: 2; }
 .ncard-left { flex-shrink: 0; }
 .ncard-icon {
   width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;

@@ -72,17 +72,34 @@
           <el-input v-model="form.detailAddr" placeholder="如：XX路XX号XX大厦3楼" maxlength="100" show-word-limit />
         </el-form-item>
 
-        <el-form-item label="人数上限" prop="maxMembers">
-          <el-input-number v-model="form.maxMembers" :min="2" :max="100" />
+        <el-form-item label="人数范围" prop="maxMembers">
+          <el-input-number v-model="form.minMembers" :min="1" :max="100" style="width:100px" /> 人 ~
+          <el-input-number v-model="form.maxMembers" :min="2" :max="100" style="width:100px;margin-left:8px" /> 人
         </el-form-item>
 
         <el-form-item label="费用说明" prop="costDesc">
-          <el-input v-model="form.costDesc" placeholder="如：AA制约50元/人" />
+          <div class="cost-quick">
+            <el-button size="small" :type="form.costDesc==='AA制'?'primary':''" @click="form.costDesc='AA制'">AA制</el-button>
+            <el-button size="small" :type="form.costDesc==='免费'?'primary':''" @click="form.costDesc='免费'">免费</el-button>
+            <el-button size="small" :type="form.costDesc==='我请客'?'primary':''" @click="form.costDesc='我请客'">我请客</el-button>
+          </div>
+          <el-input v-model="form.costDesc" placeholder="例如：AA制，人均约50元，含餐费不含车费" style="margin-top:8px" />
+        </el-form-item>
+
+        <el-form-item label="联系方式 *" prop="contact">
+          <el-input v-model="form.contact" placeholder="请填写微信/手机号，仅报名成功用户可见" maxlength="100" show-word-limit />
         </el-form-item>
 
         <el-form-item label="发布方式">
-          <el-switch v-model="form.isAnonymous" active-text="匿名发布" inactive-text="显示昵称" />
+          <el-switch v-model="form.isAnonymous" />
+          <span style="margin-left:10px;color:var(--text-regular);font-size:14px;font-weight:500">匿名发布</span>
         </el-form-item>
+
+        <!-- 安全提示 -->
+        <div class="safety-tip">
+          <el-icon :size="16"><WarningFilled /></el-icon>
+          温馨提示：请在公共场所见面，注意人身和财产安全
+        </div>
 
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">发布活动</el-button>
@@ -98,7 +115,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { activityApi } from '@/api'
-import { KnifeFork, PictureFilled, MapLocation, MoreFilled } from '@element-plus/icons-vue'
+import { KnifeFork, PictureFilled, MapLocation, MoreFilled, WarningFilled } from '@element-plus/icons-vue'
 import { areaData } from '@/utils/china-area'
 
 const router = useRouter()
@@ -116,8 +133,10 @@ const form = reactive({
   area: [],
   detailAddr: '',
   location: '',
+  minMembers: 1,
   maxMembers: 10,
   costDesc: '',
+  contact: '',
 })
 
 const rules = {
@@ -171,13 +190,39 @@ const handleSubmit = async () => {
 .activity-publish { max-width: 700px; margin: 0 auto; }
 
 .form-card {
-  border-radius: 16px !important; border: 1px solid #edf0f4 !important;
-
+  border-radius: 18px !important; border: 1px solid #edf0f4 !important;
   :deep(.el-card__body) { padding: 32px 36px; }
-
+  :deep(.el-form-item) { margin-bottom: 24px; }
   :deep(.el-form-item__label) { font-weight: 600; color: var(--text-primary); }
-  :deep(.el-radio) { margin-right: 20px; }
+  :deep(.el-input__wrapper) {
+    border-radius: 8px; box-shadow: 0 0 0 1px #d1d5db; padding: 10px 12px;
+    &:hover { box-shadow: 0 0 0 1px #9ca3af; }
+    &.is-focus { box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245,158,11,0.1); }
+  }
+  :deep(.el-textarea__inner) {
+    border-radius: 8px; border-color: #d1d5db; padding: 10px 12px;
+    &:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+  }
+  :deep(.el-radio) {
+    margin-right: 16px;
+    .el-radio__input { display: none; }
+    .el-radio__label { padding: 8px 18px; border-radius: 8px; font-weight: 600; background: #f3f4f6; color: #555; transition: all 0.2s; cursor: pointer; }
+    &.is-checked .el-radio__label { background: #f59e0b; color: #fff; }
+  }
+  :deep(.el-switch) {
+    &.is-checked .el-switch__core { background: #f59e0b; border-color: #f59e0b; }
+    .el-switch__core { background: #e5e7eb; }
+  }
   :deep(.el-cascader) { width: 100%; }
+}
+
+.cost-quick { display: flex; gap: 8px; margin-bottom: 8px; }
+.safety-tip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; margin-top: 8px;
+  background: #fef9e7; border-radius: 10px;
+  font-size: 13px; color: #92400e;
+  .el-icon { color: #f59e0b; flex-shrink: 0; }
 }
 
 @media (max-width: 500px) {

@@ -48,12 +48,19 @@
           <el-option label="最新发布" value="createdAt" /><el-option label="即将开始" value="activityTime" />
         </el-select>
         <el-button type="primary" @click="loadList" class="filter-btn"><el-icon><Search /></el-icon> 搜索</el-button>
+        <el-button @click="searchKeyword='';filterType='';filterCity='';filterStatus='';filterSortBy='';loadList()" class="filter-btn-reset">重置</el-button>
       </div>
     </div>
 
     <!-- 活动卡片列表 -->
     <div v-loading="loading" class="activity-grid-wrap">
-      <el-empty v-if="!loading && activities.length === 0" description="暂无活动，换个条件试试吧" />
+      <el-empty v-if="!loading && activities.length === 0" description="暂无活动">
+        <template #default>
+          <div class="empty-actions">
+            <el-button type="primary" @click="router.push('/activity/publish')">发起新活动</el-button>
+          </div>
+        </template>
+      </el-empty>
       <div v-else class="activity-grid">
         <div v-for="(item, idx) in activities" :key="item.id" class="activity-card"
           :style="{ animationDelay: idx * 0.04 + 's' }" @click="goDetail(item.id)">
@@ -171,9 +178,10 @@ onMounted(() => loadList())
 
 .filter-bar { background: #fff; border: 1px solid #edf0f4; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; }
 .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-  .filter-search { flex: 1; min-width: 160px; }
-  .filter-sel { width: 130px; flex-shrink: 0; }
-  .filter-btn { flex-shrink: 0; border-radius: 10px; }
+  .filter-search { flex: 1; min-width: 160px; :deep(.el-input__wrapper) { height: 40px; } }
+  .filter-sel { width: 130px; flex-shrink: 0; :deep(.el-input__wrapper) { height: 40px; } }
+  .filter-btn { flex-shrink: 0; border-radius: 10px; height: 40px; background: #f59e0b !important; border-color: #f59e0b !important; }
+  .filter-btn-reset { flex-shrink: 0; border-radius: 10px; height: 40px; }
 }
 
 /* ====== 活动卡片 ====== */
@@ -225,11 +233,13 @@ onMounted(() => loadList())
 
 .publish-fab {
   position: fixed; right: 40px; bottom: 80px;
-  width: 52px; height: 52px; box-shadow: 0 6px 20px rgba(64,158,255,0.35);
+  width: 52px; height: 52px; box-shadow: 0 6px 20px rgba(245,158,11,0.35);
   animation: fabPulse 2.5s ease-in-out infinite; z-index: 10;
-  &:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(64,158,255,0.45); animation: none; }
+  background: #f59e0b !important; border-color: #f59e0b !important;
+  &:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(245,158,11,0.45); animation: none; }
 }
-@keyframes fabPulse { 0%,100%{box-shadow:0 6px 20px rgba(64,158,255,0.35)} 50%{box-shadow:0 6px 30px rgba(64,158,255,0.55)} }
+@keyframes fabPulse { 0%,100%{box-shadow:0 6px 20px rgba(245,158,11,0.35)} 50%{box-shadow:0 6px 30px rgba(245,158,11,0.55)} }
+.empty-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
 
 @media (max-width: 768px) {
   .activity-card { flex-direction: column; }

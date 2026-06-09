@@ -43,8 +43,8 @@
           </div>
           <div class="mc-body">
             <span class="mc-tag tag-blue">技能交换</span>
-            <h3>互相教学，共同成长</h3>
-            <p>编程、语言、音乐、健身——找到志同道合的伙伴</p>
+            <h3>用技能交换新可能</h3>
+            <p>教我弹吉他，我教你编程，互相成就</p>
           </div>
           <div class="mc-hover-icon"><el-icon :size="24"><ArrowRight /></el-icon></div>
         </div>
@@ -63,8 +63,8 @@
           </div>
           <div class="mc-body">
             <span class="mc-tag tag-green">闲置共享</span>
-            <h3>让好物流转起来</h3>
-            <p>书籍、数码、家居——借用、交换或赠送</p>
+            <h3>让闲置不闲置</h3>
+            <p>共享好物温暖彼此，借用交换或赠送</p>
           </div>
           <div class="mc-hover-icon"><el-icon :size="24"><ArrowRight /></el-icon></div>
         </div>
@@ -85,17 +85,16 @@
           <div class="mc-body">
             <span class="mc-tag tag-orange">临时搭伴</span>
             <h3>结伴同行不孤单</h3>
-            <p>拼饭、看展、短途旅行——找到有趣的同行者</p>
+            <p>一个人吃饭太无聊？找个同城伙伴一起出发</p>
           </div>
           <div class="mc-hover-icon"><el-icon :size="24"><ArrowRight /></el-icon></div>
         </div>
       </div>
     </section>
 
-    <!-- 最新内容 Bento Grid -->
+    <!-- 最新发布 -->
     <section class="bento" v-loading="dataLoading">
-      <div class="sec-label">发现</div>
-      <h2 class="sec-title">最新发布</h2>
+      <h2 class="sec-title" style="margin-bottom:36px">最新发布</h2>
       <template v-if="bentoItems.length">
         <div class="bento-grid">
           <div v-for="(item,i) in bentoItems.slice(0, pageSize)" :key="item.id" class="bento-card"
@@ -144,8 +143,7 @@
 
     <!-- 社区动态 -->
     <section class="feed-sec" v-if="feed.length">
-      <div class="sec-label">社区</div>
-      <h2 class="sec-title">最近动态</h2>
+      <h2 class="sec-title" style="margin-bottom:36px">最近动态</h2>
       <div class="feed-scroll">
         <div v-for="(item,i) in feed.slice(0, feedShowCount)" :key="i" class="feed-card" :style="{ animationDelay: i*0.06+'s' }">
           <div class="fc-icon-wrap" :class="fcIconClass(item)">
@@ -316,15 +314,15 @@ watch([() => stats.userCount, () => stats.skillCount, () => stats.totalPosts], (
 
 .hero h1 { font-size: 50px; font-weight: 900; color: #111827; line-height: 1.2; margin: 0 0 14px; letter-spacing: -1.5px; }
 .hero .hl { background: linear-gradient(135deg, #409eff 0%, #7b2ff7 50%, #e040fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.hero p { font-size: 16px; color: #6b7280; max-width: 480px; margin: 0 auto 28px; line-height: 1.65; }
+.hero p { font-size: 17px; color: #555; max-width: 580px; margin: 0 auto 28px; line-height: 1.7; }
 .hero-btns { display: flex; gap: 12px; justify-content: center; margin-bottom: 44px; }
-.btn-outline { border: 1.5px solid #d0d5dd !important; background: #fff !important; color: var(--text-regular) !important; &:hover { border-color: var(--primary-color) !important; color: var(--primary-color) !important; } }
+.btn-outline { border: 1.5px solid #909399 !important; background: #f5f6f8 !important; color: #555 !important; font-weight: 600 !important; &:hover { border-color: var(--primary-color) !important; color: var(--primary-color) !important; background: #f0f5ff !important; } }
 
 .hero-nums { display: flex; gap: 0; justify-content: center; }
 .hn { padding: 0 40px; text-align: center;
-  &+& { border-left: 1px solid #e8ecf2; }
-  strong { display: block; font-size: 30px; font-weight: 900; background: linear-gradient(135deg, #409eff, #7b2ff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  span { font-size: 12px; color: #909399; }
+  &+& { border-left: 1px solid #e5e7eb; }
+  strong { display: block; font-size: 30px; font-weight: 900; background: linear-gradient(135deg, #409eff, #6b8cff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 2px; }
+  span { font-size: 13px; color: #666; display: block; line-height: 1; }
 }
 
 /* ====== 模块 ====== */
@@ -336,22 +334,23 @@ watch([() => stats.userCount, () => stats.skillCount, () => stats.totalPosts], (
 .mod-card {
   background: #fff; border: 1px solid #edf0f4; border-radius: 22px;
   padding: 32px 28px 28px; cursor: pointer; position: relative; overflow: hidden;
-  transition: all 0.45s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
 
   &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 24px 48px rgba(0,0,0,0.05), 0 8px 16px rgba(0,0,0,0.03);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
     border-color: transparent;
     .mc-hover-icon { opacity: 1; transform: translate(0, -50%); }
-    .mc-illustration svg { transform: scale(1.08); }
+    .mc-illustration svg { transform: scale(1.05); }
   }
 }
 .mc-illustration { height: 110px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
 .mc-svg { transition: transform 0.45s ease; }
 .mc-tag { display: inline-block; padding: 3px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; margin-bottom: 10px;
-  &.tag-blue { background: rgba(64,158,255,0.07); color: #409eff; }
-  &.tag-green { background: rgba(103,194,58,0.07); color: #52b818; }
-  &.tag-orange { background: rgba(230,162,60,0.07); color: #e6a23c; }
+  &.tag-blue { background: #dbeafe; color: #1d4ed8; }
+  &.tag-green { background: #dcfce7; color: #166534; }
+  &.tag-orange { background: #fef3c7; color: #92400e; }
 }
 .mod-card h3 { font-size: 18px; font-weight: 700; margin: 0 0 6px; color: var(--text-primary); }
 .mod-card p { font-size: 14px; color: #6b7280; margin: 0; line-height: 1.5; }
@@ -371,6 +370,7 @@ watch([() => stats.userCount, () => stats.skillCount, () => stats.totalPosts], (
 .bento-card {
   background: #fff; border: 1px solid #edf0f4; border-radius: 18px;
   cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
   animation: cardIn 0.5s ease-out both;
 

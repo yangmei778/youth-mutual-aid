@@ -35,7 +35,7 @@
       <div class="filter-row">
         <el-input v-model="filters.keyword" placeholder="搜索物品..." clearable :prefix-icon="Search" class="filter-search" @keyup.enter="loadList" @clear="loadList" />
         <el-select v-model="filters.exchangeType" placeholder="交换方式" clearable @change="loadList" class="filter-sel">
-          <el-option label="借用" value="borrow" /><el-option label="赠送" value="gift" /><el-option label="交换" value="exchange" />
+          <el-option label="出售" value="sell" /><el-option label="借用" value="borrow" /><el-option label="赠送" value="gift" /><el-option label="交换" value="exchange" />
         </el-select>
         <el-select v-model="filters.city" placeholder="城市" clearable filterable @change="loadList" class="filter-sel">
           <el-option v-for="c in cities" :key="c" :label="c" :value="c" />
@@ -50,7 +50,13 @@
 
     <!-- 物品卡片 -->
     <div v-loading="loading" class="goods-grid-wrap">
-      <el-empty v-if="!loading && goodsList.length === 0" description="暂无物品，换个条件试试吧" />
+      <el-empty v-if="!loading && goodsList.length === 0" description="暂无物品">
+        <template #default>
+          <div class="empty-actions">
+            <el-button type="primary" @click="router.push('/goods/publish')">发布我的闲置</el-button>
+          </div>
+        </template>
+      </el-empty>
       <div v-else class="goods-grid">
         <div v-for="(item, idx) in goodsList" :key="item.id" class="goods-card"
           :style="{ animationDelay: idx * 0.04 + 's' }" @click="goDetail(item.id)">
@@ -222,11 +228,13 @@ onMounted(() => loadList())
 
 .publish-fab {
   position: fixed; right: 40px; bottom: 80px;
-  width: 52px; height: 52px; box-shadow: 0 6px 20px rgba(64,158,255,0.35);
+  width: 52px; height: 52px; box-shadow: 0 6px 20px rgba(16,185,129,0.35);
   animation: fabPulse 2.5s ease-in-out infinite; z-index: 10;
-  &:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(64,158,255,0.45); animation: none; }
+  background: #10b981 !important; border-color: #10b981 !important;
+  &:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(16,185,129,0.45); animation: none; }
 }
-@keyframes fabPulse { 0%,100%{box-shadow:0 6px 20px rgba(64,158,255,0.35)} 50%{box-shadow:0 6px 30px rgba(64,158,255,0.55)} }
+@keyframes fabPulse { 0%,100%{box-shadow:0 6px 20px rgba(16,185,129,0.35)} 50%{box-shadow:0 6px 30px rgba(16,185,129,0.55)} }
+.empty-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
 
 @media (max-width: 900px) { .goods-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px) { .goods-grid { grid-template-columns: 1fr; } .filter-row { flex-direction: column; .filter-sel, .filter-search { width: 100%; } } }

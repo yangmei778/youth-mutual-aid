@@ -80,7 +80,7 @@ public class SkillServiceImpl extends ServiceImpl<SkillPostMapper, SkillPost> im
             wrapper.eq(SkillPost::getCategory, category);
         }
         if (StringUtils.hasText(keyword)) {
-            wrapper.and(w -> w.like(SkillPost::getTitle, keyword).or().like(SkillPost::getDescription, keyword));
+            wrapper.and(w -> w.like(SkillPost::getTitle, keyword).or().like(SkillPost::getDescription, keyword).or().like(SkillPost::getCategory, keyword));
         }
 
         // 城市筛选：查找该城市的用户发布的技能

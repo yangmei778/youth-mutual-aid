@@ -176,6 +176,13 @@
                 </div>
               </template>
             </div>
+
+            <!-- 管理员操作 -->
+            <div v-if="isAdmin && !isOrganizer" class="admin-bar">
+              <el-tag type="danger" size="small" effect="dark">管理员操作</el-tag>
+              <el-button size="small" type="warning" plain @click="adminOffline">下架</el-button>
+              <el-button size="small" type="danger" @click="adminDelete" :loading="adminOfflining">删除</el-button>
+            </div>
           </div>
         </div>
       </template>
@@ -220,8 +227,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { activityApi } from '@/api'
+import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
+import { activityApi, adminApi } from '@/api'
 import { KnifeFork, PictureFilled, MapLocation, MoreFilled, Clock, Location, User, Coin, Edit, Plus, Timer } from '@element-plus/icons-vue'
 import MapView from '@/components/MapView.vue'
 
@@ -250,6 +258,17 @@ const progressColor = computed(() => {
 })
 const alreadyJoined = computed(() => activity.value?.currentUserJoined === true)
 const isOrganizer = computed(() => userStore.userInfo?.id === activity.value?.userId)
+const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
+const adminOfflining = ref(false)
+async function adminOffline() {
+  try { await showConfirm('管理员下架此活动？', '管理操作') } catch { return }
+  adminOfflining.value = true
+  try { await adminApi.offlineActivity(activity.value.id); ElMessage.success('已下架'); loadDetail() } catch {} finally { adminOfflining.value = false }
+}
+async function adminDelete() {
+  try { await showConfirm('管理员永久删除此活动？不可恢复', '管理操作', 'danger') } catch { return }
+  try { await adminApi.deleteActivity(activity.value.id); ElMessage.success('已删除'); window.history.back() } catch {}
+}
 const canJoin = computed(() => activity.value?.status === 'open' && !alreadyJoined.value && !isOrganizer.value)
 
 const joinDialogVisible = ref(false); const joining = ref(false); const joinFormRef = ref(null)
@@ -269,12 +288,12 @@ const handleJoin = async () => {
   catch (e) { ElMessage.error(e?.response?.data?.message || '报名失败') } finally { joining.value = false }
 }
 async function handleApprove(m) {
-  try { await ElMessageBox.confirm(`通过「${m.nickname}」的报名？`, '审核', { type: 'info' }) } catch { return }
+  try { await showConfirm(`通过「${m.nickname}」的报名申请？`, '审核') } catch { return }
   m._approving = true
   try { await activityApi.approveMember(activity.value.id, m.id); ElMessage.success('已通过'); loadDetail() } catch {} finally { m._approving = false }
 }
 async function handleReject(m) {
-  try { await ElMessageBox.confirm(`拒绝「${m.nickname}」的报名？`, '审核', { type: 'warning' }) } catch { return }
+  try { await showConfirm(`拒绝「${m.nickname}」的报名申请？`, '审核') } catch { return }
   m._rejecting = true
   try { await activityApi.rejectMember(activity.value.id, m.id); ElMessage.success('已拒绝'); loadDetail() } catch {} finally { m._rejecting = false }
 }
@@ -298,12 +317,12 @@ async function submitReview() {
   catch {} finally { reviewSubmitting.value = false }
 }
 async function handleDeleteReview(r) {
-  try { await ElMessageBox.confirm('删除这条回顾？', '确认', { type: 'warning' }) } catch { return }
+  try { await showConfirm('删除这条回顾？', '确认') } catch { return }
   try { await activityApi.deleteReview(activity.value.id, r.id); ElMessage.success('已删除'); fetchReviews() } catch {}
 }
 const deleting = ref(false)
 async function handleDelete() {
-  try { await ElMessageBox.confirm('永久删除此活动？不可恢复。', '确认删除', { type: 'error', confirmButtonText: '删除' }) } catch { return }
+  try { await showConfirm('永久删除此活动？不可恢复', '确认删除', 'danger') } catch { return }
   deleting.value = true
   try { await activityApi.deleteActivity(activity.value.id); ElMessage.success('已删除'); window.history.back() } catch {} finally { deleting.value = false }
 }
@@ -419,6 +438,7 @@ onMounted(() => loadDetail())
 .org-tag { font-size: 14px; color: #909399; }
 
 .empty-hint { text-align: center; padding: 24px 0; font-size: 13px; color: #b0b8c4; }
+.admin-bar { margin-top: 16px; padding: 14px 18px; background: #fef0f0; border: 1px solid #fbc4c4; border-radius: 14px; display: flex; align-items: center; gap: 10px; }
 
 @media (max-width: 860px) {
   .ad-body { flex-direction: column; }

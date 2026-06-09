@@ -5,7 +5,7 @@
     <!-- 第一行：核心统计 -->
     <el-row :gutter="16" class="stat-row">
       <el-col :xs="12" :sm="6" v-for="card in topCards" :key="card.label">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" :class="{ clickable: card.link }" @click="card.link && $router.push(card.link)">
           <el-statistic :title="card.label" :value="card.value">
             <template #prefix>
               <el-icon :size="20" :color="card.color"><component :is="card.icon" /></el-icon>
@@ -75,17 +75,17 @@ const hasCategoryData = computed(() => stats.value.categoryDistribution?.length 
 const hasTrendData = computed(() => stats.value.dailyTrend?.length > 0)
 
 const topCards = computed(() => [
-  { label: '用户总数', value: stats.value.userCount, icon: User, color: '#409EFF' },
-  { label: '技能数量', value: stats.value.skillCount, icon: Cpu, color: '#67C23A' },
-  { label: '物品数量', value: stats.value.goodsCount, icon: Box, color: '#E6A23C' },
-  { label: '活动数量', value: stats.value.activityCount, icon: Calendar, color: '#F56C6C' },
+  { label: '用户总数', value: stats.value.userCount, icon: User, color: '#409EFF', link: '/admin/users' },
+  { label: '技能数量', value: stats.value.skillCount, icon: Cpu, color: '#67C23A', link: '/admin/audit' },
+  { label: '物品数量', value: stats.value.goodsCount, icon: Box, color: '#E6A23C', link: '/admin/audit' },
+  { label: '活动数量', value: stats.value.activityCount, icon: Calendar, color: '#F56C6C', link: '/admin/audit' },
 ])
 
 const bottomCards = computed(() => [
   { label: '互助记录', value: stats.value.mutualRecordCount, icon: Connection, color: '#409EFF' },
-  { label: '待审核报名', value: stats.value.pendingAuditCount, icon: Warning, color: '#E6A23C' },
-  { label: '待处理举报', value: stats.value.pendingReportCount, icon: WarningFilled, color: '#F56C6C' },
-  { label: '近7天新增用户', value: stats.value.recentUsers, icon: Plus, color: '#67C23A' },
+  { label: '待审核报名', value: stats.value.pendingAuditCount, icon: Warning, color: '#E6A23C', link: '/admin/audit' },
+  { label: '待处理举报', value: stats.value.pendingReportCount, icon: WarningFilled, color: '#F56C6C', link: '/admin/reports' },
+  { label: '近7天新增用户', value: stats.value.recentUsers, icon: Plus, color: '#67C23A', link: '/admin/users' },
   { label: '近30天活跃用户', value: stats.value.activeUsers, icon: DataAnalysis, color: '#9B59B6' },
 ])
 

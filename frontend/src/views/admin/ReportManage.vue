@@ -46,8 +46,14 @@
       </template>
     </el-drawer>
 
+    <div v-if="selectedReports.length" class="batch-bar">
+      <span>已选 {{ selectedReports.length }} 条</span>
+      <el-button type="danger" size="small" @click="batchDeleteReports">批量删除</el-button>
+    </div>
+
     <div class="ap-card">
-      <el-table :data="reports" v-loading="loading" stripe class="modern-table">
+      <el-table :data="reports" v-loading="loading" stripe class="modern-table" @selection-change="onReportSelect">
+        <el-table-column type="selection" width="45" />
         <el-table-column type="expand">
           <template #default="{ row }">
             <div class="expand-row">
@@ -80,7 +86,10 @@
               <el-button type="success" size="small" plain @click="handleAction(row,'approved')">通过</el-button>
               <el-button type="danger" size="small" plain @click="handleAction(row,'rejected')">驳回</el-button>
             </template>
-            <div v-else class="handled-info">{{ row.handlerName || '系统' }} · {{ row.handleNote || '-' }}</div>
+            <div v-else class="handled-info">
+              <span>{{ row.handlerName || '系统' }} · {{ row.handleNote || '-' }}</span>
+              <el-button text type="danger" size="small" @click="deleteReport(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -114,10 +123,17 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { Loading } from '@element-plus/icons-vue'
 import { adminApi, skillApi, goodsApi, activityApi } from '@/api'
 
-const reports = ref([]); const loading = ref(false); const statusFilter = ref('pending')
+const reports = ref([]); const loading = ref(false); const statusFilter = ref('pending'); const selectedReports = ref([])
+function onReportSelect(val) { selectedReports.value = val }
+async function batchDeleteReports() {
+  try { await showConfirm(`确定批量删除 ${selectedReports.value.length} 条举报记录？`, '批量删除', 'danger') } catch { return }
+  for (const r of selectedReports.value) { try { await adminApi.deleteReport(r.id) } catch {} }
+  ElMessage.success('批量删除完成'); selectedReports.value = []; fetchReports()
+}
 const pendingCount = computed(() => reports.value.filter(r => r.status === 'pending').length)
 
 function typeLabel(t) { const m={skill:'技能',goods:'物品',activity:'活动',user:'用户'}; return m[t]||t }
@@ -172,6 +188,11 @@ async function confirmAction() {
   catch {} finally { actionSubmitting.value = false }
 }
 
+async function deleteReport(row) {
+  try { await showConfirm('删除此举报记录？', '确认') } catch { return }
+  try { await adminApi.deleteReport(row.id); ElMessage.success('已删除'); fetchReports() } catch {}
+}
+
 onMounted(() => fetchReports())
 </script>
 
@@ -186,6 +207,7 @@ onMounted(() => fetchReports())
 .expand-row { padding: 8px 0 8px 40px; font-size: 13px; color: var(--text-regular); }
 .handled-info { font-size: 12px; color: #909399; }
 .empty-tip { text-align: center; padding: 48px 0; color: #b0b8c4; }
+.batch-bar { display: flex; align-items: center; gap: 14px; padding: 10px 16px; margin-bottom: 12px; background: #fef0f0; border: 1px solid #fbc4c4; border-radius: 10px; font-size: 13px; font-weight: 600; }
 
 .ad-report-info { background: #f8f9fb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 .ad-row { display: flex; gap: 12px; padding: 6px 0; font-size: 14px;

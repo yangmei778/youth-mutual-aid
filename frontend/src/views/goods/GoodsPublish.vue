@@ -56,23 +56,28 @@
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item v-if="form.exchangeType === 'sell' || form.exchangeType === 'borrow'" :label="form.exchangeType === 'sell' ? '出售价格' : '借用价格（选填）'" prop="price">
+        <!-- 出售：价格 -->
+        <el-form-item v-if="form.exchangeType === 'sell'" label="出售价格" prop="price">
           <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" style="width:220px" />
           <span style="margin-left:10px;color:var(--text-secondary);font-size:13px">元</span>
         </el-form-item>
-
-        <el-form-item v-if="form.exchangeType === 'exchange'" label="期望交换物品" prop="expectedItems">
-          <el-input v-model="form.expectedItems" placeholder="请描述你希望交换的物品" maxlength="200" show-word-limit />
+        <!-- 借用：价格+天数 -->
+        <el-form-item v-if="form.exchangeType === 'borrow'" label="借用价格（选填）" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" style="width:220px" />
+          <span style="margin-left:10px;color:var(--text-secondary);font-size:13px">元</span>
         </el-form-item>
-
         <el-form-item v-if="form.exchangeType === 'borrow'" label="可借用天数" prop="borrowDays">
           <el-input-number v-model="form.borrowDays" :min="1" :max="365" :step="1" />
           <span style="margin-left: 8px; color: var(--text-secondary)">天</span>
         </el-form-item>
+        <!-- 交换：期望物品 -->
+        <el-form-item v-if="form.exchangeType === 'exchange'" label="期望交换物品" prop="expectedItems">
+          <el-input v-model="form.expectedItems" placeholder="请描述你希望交换的物品" maxlength="200" show-word-limit />
+        </el-form-item>
 
         <el-form-item label="发布方式">
-          <el-switch v-model="form.isAnonymous" active-text="匿名发布" inactive-text="显示昵称" />
-          <span style="margin-left:12px;color:var(--text-secondary);font-size:13px">{{ form.isAnonymous ? '其他用户看到的是"匿名用户"' : '其他用户可以看到你的昵称' }}</span>
+          <el-switch v-model="form.isAnonymous" />
+          <span style="margin-left:10px;color:var(--text-regular);font-size:14px;font-weight:500">匿名发布</span>
         </el-form-item>
 
         <el-form-item label="物品图片" prop="images">
@@ -204,43 +209,41 @@ async function handleSubmit() {
 </script>
 
 <style lang="scss" scoped>
-.page-header {
-  margin-bottom: 20px;
-
-  h2 {
-    font-size: 24px;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-  }
-
-  p {
-    color: var(--text-secondary);
-    font-size: 14px;
-  }
+.page-header { margin-bottom: 20px;
+  h2 { font-size: 24px; color: var(--text-primary); margin-bottom: 4px; }
+  p { color: var(--text-secondary); font-size: 14px; }
 }
 
 .form-card {
-  max-width: 720px;
-
-  :deep(.el-card__body) {
-    padding: 24px 32px;
+  max-width: 720px; border-radius: 18px !important; border: 1px solid #edf0f4 !important;
+  :deep(.el-card__body) { padding: 32px 36px; }
+  :deep(.el-form-item) { margin-bottom: 24px; }
+  :deep(.el-form-item__label) { font-weight: 600; color: var(--text-primary); }
+  :deep(.el-input__wrapper) {
+    border-radius: 8px; box-shadow: 0 0 0 1px #d1d5db; padding: 10px 12px;
+    &:hover { box-shadow: 0 0 0 1px #9ca3af; }
+    &.is-focus { box-shadow: 0 0 0 2px #10b981, 0 0 0 4px rgba(16,185,129,0.1); }
   }
+  :deep(.el-textarea__inner) {
+    border-radius: 8px; border-color: #d1d5db; padding: 10px 12px;
+    &:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+  }
+  :deep(.el-radio) {
+    margin-right: 16px;
+    .el-radio__input { display: none; }
+    .el-radio__label { padding: 8px 18px; border-radius: 8px; font-weight: 600; background: #f3f4f6; color: #555; transition: all 0.2s; cursor: pointer; }
+    &.is-checked .el-radio__label { background: #10b981; color: #fff; }
+  }
+  :deep(.el-switch) {
+    &.is-checked .el-switch__core { background: #10b981; border-color: #10b981; }
+    .el-switch__core { background: #e5e7eb; }
+  }
+  :deep(.el-slider__bar) { background: #10b981; }
+  :deep(.el-slider__button) { border-color: #10b981; }
 }
 
-.condition-slider {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-
-  .el-slider {
-    flex: 1;
-  }
-
-  .condition-value {
-    font-size: 14px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-  }
+.condition-slider { display: flex; align-items: center; gap: 16px; width: 100%;
+  .el-slider { flex: 1; }
+  .condition-value { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
 }
 </style>

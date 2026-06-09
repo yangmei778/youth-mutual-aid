@@ -59,4 +59,12 @@ public class ReportController {
         );
         return R.ok();
     }
+
+    @Operation(summary = "管理员删除举报记录")
+    @DeleteMapping("/v1/admin/reports/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public R<Void> deleteReport(@PathVariable Long id) {
+        reportService.deleteReport(id);
+        return R.ok();
+    }
 }

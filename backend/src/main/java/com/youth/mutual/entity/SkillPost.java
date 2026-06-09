@@ -30,6 +30,8 @@ public class SkillPost {
     private String preferredLocation;
 
     private Integer onlineSupport;
+    @TableField(exist = false)
+    private java.math.BigDecimal price;
     private Integer isAnonymous;
 
     private Integer status;
