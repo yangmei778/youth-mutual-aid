@@ -26,24 +26,24 @@
 
     <!-- 热门分类 -->
     <div class="quick-cats">
-      <span v-for="c in hotCats" :key="c" class="quick-cat-pill" :class="{ active: filters.category === c }"
-        @click="filters.category = filters.category === c ? '' : c; loadList()">{{ c }}</span>
+      <span v-for="c in HOT_GOODS_CATS" :key="c" class="quick-cat-pill" :class="{ active: filters.category === c }"
+        @click="filters.category = filters.category === c ? '' : c; handleSearch()">{{ c }}</span>
     </div>
 
     <!-- 筛选栏 -->
     <div class="filter-bar">
       <div class="filter-row">
-        <el-input v-model="filters.keyword" placeholder="搜索物品..." clearable :prefix-icon="Search" class="filter-search" @keyup.enter="loadList" @clear="loadList" />
-        <el-select v-model="filters.exchangeType" placeholder="交换方式" clearable @change="loadList" class="filter-sel">
+        <el-input v-model="filters.keyword" placeholder="搜索物品..." clearable :prefix-icon="Search" class="filter-search" @keyup.enter="handleSearch" @clear="handleSearch" />
+        <el-select v-model="filters.exchangeType" placeholder="交换方式" clearable @change="handleSearch" class="filter-sel">
           <el-option label="出售" value="sell" /><el-option label="借用" value="borrow" /><el-option label="赠送" value="gift" /><el-option label="交换" value="exchange" />
         </el-select>
-        <el-select v-model="filters.city" placeholder="城市" clearable filterable @change="loadList" class="filter-sel">
-          <el-option v-for="c in cities" :key="c" :label="c" :value="c" />
+        <el-select v-model="filters.city" placeholder="城市" clearable filterable @change="handleSearch" class="filter-sel">
+          <el-option v-for="c in CITIES" :key="c" :label="c" :value="c" />
         </el-select>
-        <el-select v-model="filters.sortBy" placeholder="排序" clearable @change="loadList" class="filter-sel">
+        <el-select v-model="filters.sortBy" placeholder="排序" clearable @change="handleSearch" class="filter-sel">
           <el-option label="最新发布" value="createdAt" />
         </el-select>
-        <el-button type="primary" @click="loadList" class="filter-btn"><el-icon><Search /></el-icon> 搜索</el-button>
+        <el-button type="primary" @click="handleSearch" class="filter-btn"><el-icon><Search /></el-icon> 搜索</el-button>
         <el-button @click="resetFilters" class="filter-btn-reset">重置</el-button>
       </div>
     </div>
@@ -89,7 +89,7 @@
     <div class="pagination-wrapper" v-if="total > 0">
       <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize"
         :total="total" :page-sizes="[8,12,20]" layout="total, sizes, prev, pager, next"
-        @size-change="loadList" @current-change="loadList" />
+        @size-change="handleSizeChange" @current-change="handlePageChange" />
     </div>
 
     <router-link to="/goods/publish">
@@ -101,142 +101,123 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { goodsApi } from '@/api'
 import { Search, Plus } from '@element-plus/icons-vue'
+import { formatTime } from '@/utils/date'
+import { CITIES, HOT_GOODS_CATS, EXCHANGE_TYPE_MAP } from '@/utils/constants'
+import { useListPage } from '@/composables/useListPage'
 
 const router = useRouter()
 const userStore = useUserStore()
-const hotCats = ['数码', '书籍', '家居', '服饰', '运动', '食品']
-const cities = ['北京','上海','广州','深圳','杭州','成都','武汉','南京','重庆','西安']
 
-const filters = reactive({ keyword: '', category: '', exchangeType: '', city: '', sortBy: '' })
-const pagination = reactive({ page: 1, pageSize: 12 })
-const goodsList = ref([])
-const total = ref(0)
-const loading = ref(false)
+const {
+  list: goodsList,
+  total,
+  loading,
+  filters,
+  pagination,
+  loadList,
+  handleSearch,
+  resetFilters,
+  handleSizeChange,
+  handlePageChange,
+} = useListPage(goodsApi.getList)
 
-function tagLabel(t) { const m = { sell: '出售', borrow: '借用', gift: '赠送', exchange: '交换' }; return m[t] || t }
-import { formatTime } from '@/utils/date'
+function tagLabel(t) { return EXCHANGE_TYPE_MAP[t] || t }
 function getFirstImage(imgs) { if (Array.isArray(imgs)) return imgs[0]; return imgs?.split(',')[0] || '' }
-
-async function loadList() {
-  loading.value = true
-  try {
-    const params = { pageNum: pagination.page, pageSize: pagination.pageSize, ...filters }
-    Object.keys(params).forEach(k => { if (!params[k]) delete params[k] })
-    const res = await goodsApi.getList(params)
-    goodsList.value = res.data?.list || res.data?.records || []
-    total.value = res.data?.total || 0
-  } catch { /* silent */ }
-  finally { loading.value = false }
-}
-
-function resetFilters() {
-  filters.keyword = ''; filters.category = ''; filters.exchangeType = ''; filters.city = ''
-  pagination.page = 1; loadList()
-}
 function goDetail(id) { router.push(`/goods/${id}`) }
-onMounted(() => loadList())
 </script>
 
 <style lang="scss" scoped>
-.goods-list { position: relative; min-height: 100%; }
+.goods-list {
+  position: relative;
+  min-height: 100%;
+  --list-theme: var(--goods-color, #67c23a);
+}
 
-/* ====== 复用SkillList的横幅/分类/筛选样式 ====== */
+// 模块专属配色覆盖
 .list-hero {
-  position: relative; border-radius: 20px; overflow: hidden;
-  margin-bottom: 24px; padding: 36px 32px;
   background: linear-gradient(135deg, #f2faf0 0%, #f8fbf7 50%, #fdf8f0 100%);
 }
 .list-hero-bg {
-  position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(circle at 90% 10%, rgba(103,194,58,0.08) 0%, transparent 40%),
               radial-gradient(circle at 10% 80%, rgba(67,184,75,0.05) 0%, transparent 35%);
 }
-.list-hero-content { position: relative; z-index:1; display: flex; justify-content: space-between; align-items: center; }
-.list-hero-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #67c23a; margin-bottom: 8px; }
-.list-hero-left {
-  h1 { font-size: 26px; font-weight: 800; margin: 0 0 4px; color: var(--text-primary); }
-  p { font-size: 14px; color: var(--text-secondary); margin: 0;
-    strong { color: #67c23a; font-size: 20px; font-weight: 800; } }
-}
-.lhs-item { text-align: center; .lhs-num { display: block; font-size: 32px; font-weight: 900; color: #67c23a; } .lhs-lbl { font-size: 12px; color: #909399; } }
+.list-hero-badge { color: var(--goods-color); }
+.list-hero-left p strong { color: var(--goods-color); }
+.lhs-num { color: var(--goods-color); }
 
-.quick-cats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-.quick-cat-pill {
-  padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
-  background: #fff; color: var(--text-regular); border: 1px solid #edf0f4;
-  cursor: pointer; transition: all 0.25s; user-select: none;
-  &:hover { border-color: #67c23a; color: #67c23a; background: rgba(103,194,58,0.04); }
-  &.active { background: rgba(103,194,58,0.08); color: #67c23a; border-color: rgba(103,194,58,0.25); font-weight: 600; }
-}
-
-.filter-bar { background: #fff; border: 1px solid #edf0f4; border-radius: 16px; padding: 18px 20px; margin-bottom: 24px; }
-.filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-  .filter-search { flex: 1; min-width: 160px; }
-  .filter-sel { width: 130px; flex-shrink: 0; }
-  .filter-btn, .filter-btn-reset { flex-shrink: 0; border-radius: 10px; }
-}
-
-/* ====== 卡片列表 ====== */
+// 物品卡片网格
 .goods-grid-wrap { min-height: 300px; }
 .goods-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 
 .goods-card {
-  background: #fff; border: 1px solid #edf0f4; border-radius: 16px;
-  overflow: hidden; cursor: pointer;
-  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-slow);
   animation: cardIn 0.4s ease-out both;
-
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 14px 36px rgba(0,0,0,0.06), 0 4px 10px rgba(103,194,58,0.04);
+    box-shadow: var(--shadow-lg), 0 4px 10px rgba(103,194,58,0.04);
     border-color: rgba(103,194,58,0.15);
   }
 }
-@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
 .gc-image {
-  position: relative; height: 170px; background: #f5f7fa;
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  position: relative;
+  height: 170px;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
   .goods-card:hover img { transform: scale(1.04); }
-
   .gc-placeholder { color: #c8d6e5; }
 }
-
 .gc-tag {
-  position: absolute; top: 10px; right: 10px;
-  padding: 3px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  &.tag-borrow { background: rgba(64,158,255,0.1); color: #409eff; }
-  &.tag-gift { background: rgba(103,194,58,0.1); color: #67c23a; }
-  &.tag-exchange { background: rgba(230,162,60,0.1); color: #e6a23c; }
-  &.tag-sell { background: rgba(245,108,108,0.1); color: #f56c6c; }
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 3px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  &.tag-borrow    { background: rgba(64,158,255,0.1); color: #409eff; }
+  &.tag-gift      { background: rgba(103,194,58,0.1); color: #67c23a; }
+  &.tag-exchange  { background: rgba(230,162,60,0.1); color: #e6a23c; }
+  &.tag-sell      { background: rgba(245,108,108,0.1); color: #f56c6c; }
 }
-
-.gc-body { padding: 14px 16px 16px;
-  h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.gc-body {
+  padding: 14px 16px 16px;
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 }
-.gc-mine { flex-shrink: 0; font-size: 11px; color: #67c23a; background: rgba(103,194,58,0.06); padding: 1px 8px; border-radius: 4px; font-weight: 600; }
+.gc-mine { flex-shrink: 0; font-size: 11px; color: var(--goods-color); background: rgba(103,194,58,0.06); padding: 1px 8px; border-radius: 4px; font-weight: 600; }
 .gc-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .gc-views { font-size: 12px; color: #b0b8c4; }
-.gc-foot { .gc-user { font-size: 13px; color: #909399; } }
+.gc-foot .gc-user { font-size: 13px; color: #909399; }
 
-.pagination-wrapper { display: flex; justify-content: center; margin-top: 28px; padding-bottom: 60px; }
-
+// FAB 模块专属配色
 .publish-fab {
-  position: fixed; right: 40px; bottom: 80px;
-  width: 52px; height: 52px; box-shadow: 0 6px 20px rgba(16,185,129,0.35);
-  animation: fabPulse 2.5s ease-in-out infinite; z-index: 10;
-  background: #10b981 !important; border-color: #10b981 !important;
-  &:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(16,185,129,0.45); animation: none; }
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 6px 20px rgba(16,185,129,0.35);
+  &:hover { box-shadow: 0 8px 28px rgba(16,185,129,0.45); }
 }
-@keyframes fabPulse { 0%,100%{box-shadow:0 6px 20px rgba(16,185,129,0.35)} 50%{box-shadow:0 6px 30px rgba(16,185,129,0.55)} }
-.empty-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
 
+// 响应式：物品卡片网格
 @media (max-width: 900px) { .goods-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 500px) { .goods-grid { grid-template-columns: 1fr; } .filter-row { flex-direction: column; .filter-sel, .filter-search { width: 100%; } } }
+@media (max-width: 500px) { .goods-grid { grid-template-columns: 1fr; } }
 </style>

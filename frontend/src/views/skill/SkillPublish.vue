@@ -8,7 +8,7 @@
       <h2>发布技能</h2>
     </div>
 
-    <el-card class="form-card" shadow="never">
+    <el-card class="form-card form-card-shared" shadow="never">
       <el-form
         ref="formRef"
         :model="form"
@@ -73,16 +73,16 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { skillApi, configApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
+import { SKILL_CATEGORIES } from '@/utils/constants'
 
 const router = useRouter()
 
-const categories = ref(['编程', '语言', '音乐', '绘画', '健身', '烹饪', '摄影', '设计', '写作', '其他'])
-import { onMounted } from 'vue'
+const categories = ref([...SKILL_CATEGORIES, '其他'])
 
 const formRef = ref(null)
 const submitting = ref(false)
@@ -128,40 +128,25 @@ async function handleSubmit() {
 </script>
 
 <style lang="scss" scoped>
-.skill-publish { max-width: 720px; margin: 0 auto; }
+.skill-publish {
+  max-width: 720px;
+  margin: 0 auto;
+  --form-theme: #3b82f6;
+}
 
-.page-header { margin-bottom: 20px;
+.page-header {
+  margin-bottom: 20px;
   h2 { font-size: 24px; color: var(--text-primary); margin-top: 8px; }
 }
 
-.form-card {
-  border-radius: 18px !important; border: 1px solid #edf0f4 !important;
-  :deep(.el-card__body) { padding: 32px 36px; }
-  :deep(.el-form-item) { margin-bottom: 24px; }
-  :deep(.el-form-item__label) { font-weight: 600; color: var(--text-primary); padding-bottom: 4px; }
-  :deep(.el-input__wrapper) {
-    border-radius: 8px; box-shadow: 0 0 0 1px #d1d5db;
-    transition: all 0.2s; padding: 10px 12px;
-    &:hover { box-shadow: 0 0 0 1px #9ca3af; }
-    &.is-focus { box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59,130,246,0.1); }
+// 输入框/文本域聚焦色覆盖
+.form-card-shared {
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59,130,246,0.1);
   }
-  :deep(.el-select .el-input__wrapper) { padding: 10px 12px; }
-  :deep(.el-textarea__inner) {
-    border-radius: 8px; border-color: #d1d5db; padding: 10px 12px;
-    &:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-  }
-  :deep(.el-radio) {
-    margin-right: 16px;
-    .el-radio__input { display: none; }
-    .el-radio__label {
-      padding: 8px 18px; border-radius: 8px; font-weight: 600;
-      background: #f3f4f6; color: #555; transition: all 0.2s; cursor: pointer;
-    }
-    &.is-checked .el-radio__label { background: #3b82f6; color: #fff; }
-  }
-  :deep(.el-switch) {
-    &.is-checked .el-switch__core { background: #3b82f6; border-color: #3b82f6; }
-    .el-switch__core { background: #e5e7eb; }
+  .el-textarea__inner:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
   }
 }
 </style>

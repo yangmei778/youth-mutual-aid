@@ -161,3 +161,255 @@ a {
 }
 
 /* 弹窗样式已内联在 index.html，此处不再重复 */
+
+// ============================================================
+// 列表页公共样式（技能/物品/活动 三模块复用）
+// 各页面只需在 scoped style 中设置 --list-theme 变量即可
+// ============================================================
+
+// 页头横幅 — 结构骨架（颜色由各页面通过 --list-theme 控制）
+.list-hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  padding: 36px 32px;
+}
+.list-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.list-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.list-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.list-hero-left {
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    color: var(--text-primary);
+  }
+  p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    strong {
+      font-size: 20px;
+      font-weight: 800;
+    }
+  }
+}
+.lhs-item {
+  text-align: center;
+}
+.lhs-num {
+  display: block;
+  font-size: 32px;
+  font-weight: 900;
+}
+.lhs-lbl {
+  font-size: 12px;
+  color: #909399;
+}
+
+// 快捷分类胶囊
+.quick-cats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.quick-cat-pill {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fff;
+  color: var(--text-regular);
+  border: 1px solid #edf0f4;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  user-select: none;
+  &:hover {
+    border-color: var(--list-theme, var(--primary-color));
+    color: var(--list-theme, var(--primary-color));
+    background: color-mix(in srgb, var(--list-theme, var(--primary-color)) 4%, transparent);
+  }
+  &.active {
+    background: color-mix(in srgb, var(--list-theme, var(--primary-color)) 8%, transparent);
+    color: var(--list-theme, var(--primary-color));
+    border-color: color-mix(in srgb, var(--list-theme, var(--primary-color)) 25%, transparent);
+    font-weight: 600;
+  }
+}
+
+// 筛选栏
+.filter-bar {
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+.filter-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  .filter-search {
+    flex: 1;
+    min-width: 160px;
+  }
+  .filter-sel {
+    width: 130px;
+    flex-shrink: 0;
+  }
+  .filter-btn,
+  .filter-btn-reset {
+    flex-shrink: 0;
+    border-radius: 10px;
+  }
+}
+
+// 卡片入场动画（三模块通用）
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 分页容器
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+  padding-bottom: 60px;
+}
+
+// 悬浮发布按钮
+.publish-fab {
+  position: fixed;
+  right: 40px;
+  bottom: 80px;
+  width: 52px;
+  height: 52px;
+  z-index: 10;
+  animation: fabPulse 2.5s ease-in-out infinite;
+  &:hover {
+    transform: scale(1.08);
+    animation: none;
+  }
+}
+@keyframes fabPulse {
+  0%,
+  100% {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+  50% {
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.18);
+  }
+}
+
+// 空状态操作区
+.empty-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+// 响应式断点（列表页通用）
+@media (max-width: 768px) {
+  .list-hero-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .filter-row {
+    flex-direction: column;
+    .filter-sel,
+    .filter-search {
+      width: 100%;
+    }
+  }
+}
+
+// ============================================================
+// 发布页表单公共样式
+// ============================================================
+.form-card-shared {
+  max-width: 720px;
+  border-radius: 18px !important;
+  border: 1px solid #edf0f4 !important;
+
+  .el-card__body {
+    padding: 32px 36px;
+  }
+  .el-form-item {
+    margin-bottom: 24px;
+  }
+  .el-form-item__label {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .el-input__wrapper {
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #d1d5db;
+    padding: 10px 12px;
+    transition: all 0.2s;
+    &:hover {
+      box-shadow: 0 0 0 1px #9ca3af;
+    }
+  }
+  .el-textarea__inner {
+    border-radius: 8px;
+    border-color: #d1d5db;
+    padding: 10px 12px;
+  }
+  // 单选组定制样式 — 颜色由各页面通过 --form-theme 设定
+  .el-radio {
+    margin-right: 16px;
+    .el-radio__input {
+      display: none;
+    }
+    .el-radio__label {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #555;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    &.is-checked .el-radio__label {
+      background: var(--form-theme, var(--primary-color));
+      color: #fff;
+    }
+  }
+  .el-switch {
+    &.is-checked .el-switch__core {
+      background: var(--form-theme, var(--primary-color));
+      border-color: var(--form-theme, var(--primary-color));
+    }
+    .el-switch__core {
+      background: #e5e7eb;
+    }
+  }
+}

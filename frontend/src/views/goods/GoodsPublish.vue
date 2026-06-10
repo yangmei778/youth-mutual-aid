@@ -5,7 +5,7 @@
       <p>分享你的闲置物品，让它们发挥价值</p>
     </div>
 
-    <el-card class="form-card" shadow="never">
+    <el-card class="form-card form-card-shared" shadow="never">
       <el-form
         ref="formRef"
         :model="form"
@@ -112,10 +112,11 @@ import { useRouter } from 'vue-router'
 import { goodsApi, uploadApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { GOODS_CATEGORIES } from '@/utils/constants'
 
 const router = useRouter()
 
-const categories = ['数码', '书籍', '家居', '服饰', '运动', '食品', '其他']
+const categories = [...GOODS_CATEGORIES, '其他']
 
 const formRef = ref(null)
 const fileList = ref([])
@@ -209,40 +210,34 @@ async function handleSubmit() {
 </script>
 
 <style lang="scss" scoped>
-.page-header { margin-bottom: 20px;
+.goods-publish {
+  --form-theme: #10b981;
+}
+
+.page-header {
+  margin-bottom: 20px;
   h2 { font-size: 24px; color: var(--text-primary); margin-bottom: 4px; }
   p { color: var(--text-secondary); font-size: 14px; }
 }
 
-.form-card {
-  max-width: 720px; border-radius: 18px !important; border: 1px solid #edf0f4 !important;
-  :deep(.el-card__body) { padding: 32px 36px; }
-  :deep(.el-form-item) { margin-bottom: 24px; }
-  :deep(.el-form-item__label) { font-weight: 600; color: var(--text-primary); }
-  :deep(.el-input__wrapper) {
-    border-radius: 8px; box-shadow: 0 0 0 1px #d1d5db; padding: 10px 12px;
-    &:hover { box-shadow: 0 0 0 1px #9ca3af; }
-    &.is-focus { box-shadow: 0 0 0 2px #10b981, 0 0 0 4px rgba(16,185,129,0.1); }
+// 输入框/文本域聚焦色覆盖（共享样式不包含 :focus 状态）
+.form-card-shared {
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 2px #10b981, 0 0 0 4px rgba(16,185,129,0.1);
   }
-  :deep(.el-textarea__inner) {
-    border-radius: 8px; border-color: #d1d5db; padding: 10px 12px;
-    &:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+  .el-textarea__inner:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
   }
-  :deep(.el-radio) {
-    margin-right: 16px;
-    .el-radio__input { display: none; }
-    .el-radio__label { padding: 8px 18px; border-radius: 8px; font-weight: 600; background: #f3f4f6; color: #555; transition: all 0.2s; cursor: pointer; }
-    &.is-checked .el-radio__label { background: #10b981; color: #fff; }
-  }
-  :deep(.el-switch) {
-    &.is-checked .el-switch__core { background: #10b981; border-color: #10b981; }
-    .el-switch__core { background: #e5e7eb; }
-  }
-  :deep(.el-slider__bar) { background: #10b981; }
-  :deep(.el-slider__button) { border-color: #10b981; }
+  .el-slider__bar { background: #10b981; }
+  .el-slider__button { border-color: #10b981; }
 }
 
-.condition-slider { display: flex; align-items: center; gap: 16px; width: 100%;
+.condition-slider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
   .el-slider { flex: 1; }
   .condition-value { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
 }

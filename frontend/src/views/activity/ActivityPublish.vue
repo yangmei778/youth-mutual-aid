@@ -3,7 +3,7 @@
     <h2>发布活动</h2>
     <p>发起一次临时搭伴，寻找志同道合的伙伴</p>
 
-    <el-card class="form-card" shadow="never">
+    <el-card class="form-card form-card-shared" shadow="never">
       <el-form
         ref="formRef"
         :model="form"
@@ -187,45 +187,39 @@ const handleSubmit = async () => {
 </script>
 
 <style lang="scss" scoped>
-.activity-publish { max-width: 700px; margin: 0 auto; }
+.activity-publish {
+  max-width: 700px;
+  margin: 0 auto;
+  --form-theme: #f59e0b;
+}
 
-.form-card {
-  border-radius: 18px !important; border: 1px solid #edf0f4 !important;
-  :deep(.el-card__body) { padding: 32px 36px; }
-  :deep(.el-form-item) { margin-bottom: 24px; }
-  :deep(.el-form-item__label) { font-weight: 600; color: var(--text-primary); }
-  :deep(.el-input__wrapper) {
-    border-radius: 8px; box-shadow: 0 0 0 1px #d1d5db; padding: 10px 12px;
-    &:hover { box-shadow: 0 0 0 1px #9ca3af; }
-    &.is-focus { box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245,158,11,0.1); }
+// 输入框/文本域聚焦色覆盖
+.form-card-shared {
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245,158,11,0.1);
   }
-  :deep(.el-textarea__inner) {
-    border-radius: 8px; border-color: #d1d5db; padding: 10px 12px;
-    &:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+  .el-textarea__inner:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
   }
-  :deep(.el-radio) {
-    margin-right: 16px;
-    .el-radio__input { display: none; }
-    .el-radio__label { padding: 8px 18px; border-radius: 8px; font-weight: 600; background: #f3f4f6; color: #555; transition: all 0.2s; cursor: pointer; }
-    &.is-checked .el-radio__label { background: #f59e0b; color: #fff; }
-  }
-  :deep(.el-switch) {
-    &.is-checked .el-switch__core { background: #f59e0b; border-color: #f59e0b; }
-    .el-switch__core { background: #e5e7eb; }
-  }
-  :deep(.el-cascader) { width: 100%; }
+  .el-cascader { width: 100%; }
 }
 
 .cost-quick { display: flex; gap: 8px; margin-bottom: 8px; }
 .safety-tip {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 16px; margin-top: 8px;
-  background: #fef9e7; border-radius: 10px;
-  font-size: 13px; color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 8px;
+  background: #fef9e7;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
   .el-icon { color: #f59e0b; flex-shrink: 0; }
 }
 
 @media (max-width: 500px) {
-  .form-card :deep(.el-card__body) { padding: 20px 16px; }
+  .form-card-shared .el-card__body { padding: 20px 16px; }
 }
 </style>
