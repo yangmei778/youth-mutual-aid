@@ -415,6 +415,11 @@ export const adminApi = {
   deleteReport(id) {
     return request.delete(`/v1/admin/reports/${id}`)
   },
+
+  /** 获取操作日志列表（分页） */
+  getLogs(params) {
+    return request.get('/v1/admin/logs/page', { params })
+  },
 }
 
 /**

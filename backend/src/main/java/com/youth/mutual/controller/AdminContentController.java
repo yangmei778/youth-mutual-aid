@@ -2,6 +2,7 @@ package com.youth.mutual.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.youth.mutual.auth.UserContext;
 import com.youth.mutual.entity.ActivityPost;
 import com.youth.mutual.mapper.ActivityPostMapper;
 import com.youth.mutual.common.result.PageResult;
@@ -10,6 +11,7 @@ import com.youth.mutual.entity.GoodsPost;
 import com.youth.mutual.mapper.GoodsPostMapper;
 import com.youth.mutual.entity.SkillPost;
 import com.youth.mutual.mapper.SkillPostMapper;
+import com.youth.mutual.service.OperationLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,8 @@ public class AdminContentController {
     private final SkillPostMapper skillPostMapper;
     private final GoodsPostMapper goodsPostMapper;
     private final ActivityPostMapper activityPostMapper;
+    private final OperationLogService logService;
+    private final UserContext userContext;
 
     @Operation(summary = "获取技能列表")
     @GetMapping("/skills")
@@ -54,6 +58,8 @@ public class AdminContentController {
         if (post != null) {
             post.setStatus(0);
             skillPostMapper.updateById(post);
+            logService.log(userContext.getRequiredUserId(), "offline_post",
+                    "下架了技能#" + id, post.getTitle());
         }
         return R.ok();
     }
@@ -83,6 +89,8 @@ public class AdminContentController {
         if (post != null) {
             post.setStatus(0);
             goodsPostMapper.updateById(post);
+            logService.log(userContext.getRequiredUserId(), "offline_post",
+                    "下架了物品#" + id, post.getTitle());
         }
         return R.ok();
     }
@@ -109,7 +117,12 @@ public class AdminContentController {
     @PreAuthorize("hasRole('ADMIN')")
     public R<Void> offlineActivity(@PathVariable Long id) {
         ActivityPost post = activityPostMapper.selectById(id);
-        if (post != null) { post.setStatus(0); activityPostMapper.updateById(post); }
+        if (post != null) {
+            post.setStatus(0);
+            activityPostMapper.updateById(post);
+            logService.log(userContext.getRequiredUserId(), "offline_post",
+                    "下架了活动#" + id, post.getTitle());
+        }
         return R.ok();
     }
 
@@ -119,7 +132,10 @@ public class AdminContentController {
     @DeleteMapping("/skills/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public R<Void> deleteSkill(@PathVariable Long id) {
+        SkillPost post = skillPostMapper.selectById(id);
         skillPostMapper.deleteById(id);
+        logService.log(userContext.getRequiredUserId(), "delete_post",
+                "删除了技能#" + id, post != null ? post.getTitle() : "");
         return R.ok();
     }
 
@@ -127,7 +143,10 @@ public class AdminContentController {
     @DeleteMapping("/goods/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public R<Void> deleteGoods(@PathVariable Long id) {
+        GoodsPost post = goodsPostMapper.selectById(id);
         goodsPostMapper.deleteById(id);
+        logService.log(userContext.getRequiredUserId(), "delete_post",
+                "删除了物品#" + id, post != null ? post.getTitle() : "");
         return R.ok();
     }
 
@@ -135,7 +154,10 @@ public class AdminContentController {
     @DeleteMapping("/activities/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public R<Void> deleteActivity(@PathVariable Long id) {
+        ActivityPost post = activityPostMapper.selectById(id);
         activityPostMapper.deleteById(id);
+        logService.log(userContext.getRequiredUserId(), "delete_post",
+                "删除了活动#" + id, post != null ? post.getTitle() : "");
         return R.ok();
     }
 }

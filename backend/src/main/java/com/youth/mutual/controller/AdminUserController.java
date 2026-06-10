@@ -3,9 +3,11 @@ package com.youth.mutual.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.youth.mutual.common.result.PageResult;
+import com.youth.mutual.auth.UserContext;
 import com.youth.mutual.common.result.R;
 import com.youth.mutual.entity.User;
 import com.youth.mutual.mapper.UserMapper;
+import com.youth.mutual.service.OperationLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 public class AdminUserController {
 
     private final UserMapper userMapper;
+    private final OperationLogService logService;
+    private final UserContext userContext;
 
     @Operation(summary = "获取用户列表")
     @GetMapping
@@ -56,6 +60,9 @@ public class AdminUserController {
         }
         user.setStatus(status);
         userMapper.updateById(user);
+        logService.log(userContext.getRequiredUserId(), status == 0 ? "ban_user" : "unban_user",
+                (status == 0 ? "封禁" : "解封") + "了用户@" + user.getNickname(),
+                "用户ID:" + id);
         return R.ok();
     }
 }

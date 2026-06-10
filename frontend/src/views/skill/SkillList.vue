@@ -109,10 +109,8 @@ async function fetchList() {
 function handleSearch() { queryParams.page = 1; fetchList() }
 function goDetail(id) { router.push(`/skill/${id}`) }
 function formatTime(time) {
-  if (!time) return ''; const d=new Date(time),now=new Date(),diff=now-d
-  if (diff<60000) return '刚刚'; if (diff<3600000) return Math.floor(diff/60000)+'分钟前'
-  if (diff<86400000) return Math.floor(diff/3600000)+'小时前'; if (diff<2592000000) return Math.floor(diff/86400000)+'天前'
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  if (!time) return ''; const d=new Date(time)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 onMounted(() => fetchList())
 </script>

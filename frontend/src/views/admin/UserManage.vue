@@ -24,7 +24,7 @@
         <el-table-column label="用户" min-width="180">
           <template #default="{ row }">
             <div class="user-cell">
-              <el-avatar :size="32">{{ row.nickname?.charAt(0) }}</el-avatar>
+              <el-avatar :size="32" class="clickable-avatar" @click.stop="goToUser(row.id)">{{ row.nickname?.charAt(0) }}</el-avatar>
               <div>
                 <span class="uc-name">{{ row.nickname }}</span>
                 <span class="uc-uname">@{{ row.username }}</span>
@@ -62,17 +62,19 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { showConfirm } from '@/utils/confirm'
 import { Search } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
+const router = useRouter()
 const keyword = ref(''); const userList = ref([]); const total = ref(0)
 const loading = ref(false); const page = ref(1); const pageSize = ref(10); const selectedUsers = ref([])
 function onUserSelect(val) { selectedUsers.value = val }
 
 function creditColor(s) { if(!s)return'#909399';if(s>=60)return'#67c23a';if(s>=30)return'#e6a23c';return'#f56c6c' }
-function relativeTime(t) { if(!t)return'';const d=new Date(t),n=new Date(),diff=n-d;if(diff<3600000)return Math.floor(diff/60000)+'分钟前';if(diff<86400000)return Math.floor(diff/3600000)+'小时前';if(diff<604800000)return Math.floor(diff/86400000)+'天前';return t.slice(0,10) }
+function relativeTime(t) { if(!t)return'';const d=new Date(t);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 
 async function fetchUsers() {
   loading.value = true
@@ -93,6 +95,8 @@ async function batchBan(status) {
   ElMessage.success(`批量${label}完成`); selectedUsers.value = []; fetchUsers()
 }
 
+function goToUser(id) { router.push('/user/' + id) }
+
 onMounted(() => fetchUsers())
 </script>
 
@@ -111,4 +115,10 @@ onMounted(() => fetchUsers())
 .uc-name { display: block; font-size: 14px; font-weight: 600; }
 .uc-uname { display: block; font-size: 12px; color: #909399; }
 .ap-footer { display: flex; justify-content: center; margin-top: 20px; }
+
+.clickable-avatar {
+  cursor: pointer;
+  transition: transform 0.2s;
+  &:hover { transform: scale(1.1); }
+}
 </style>

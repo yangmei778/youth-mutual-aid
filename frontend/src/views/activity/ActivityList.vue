@@ -83,7 +83,7 @@
               <span v-if="item.costDesc"><el-icon :size="14"><Coin /></el-icon> {{ item.costDesc }}</span>
             </div>
             <div class="ac-foot">
-              <span class="ac-pub">{{ item.nickname || '匿名' }}</span>
+              <span class="ac-pub">{{ item.nickname || '匿名' }} · {{ formatTime(item.createdAt) }}</span>
             </div>
           </div>
         </div>
@@ -110,6 +110,7 @@ import { useRouter } from 'vue-router'
 import { Search, Plus, Sunny, KnifeFork, PictureFilled, MapLocation, MoreFilled, Clock, Location, User, Coin } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { activityApi } from '@/api'
+import { formatTime } from '@/utils/date'
 
 const router = useRouter()
 const userStore = useUserStore()

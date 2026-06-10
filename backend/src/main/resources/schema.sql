@@ -44,3 +44,16 @@ ALTER TABLE t_goods_post ADD COLUMN price DECIMAL(10,2) DEFAULT NULL;
 ALTER TABLE t_goods_post ADD COLUMN is_anonymous TINYINT DEFAULT 0;
 ALTER TABLE t_skill_post ADD COLUMN is_anonymous TINYINT DEFAULT 0;
 ALTER TABLE t_activity_post ADD COLUMN is_anonymous TINYINT DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS t_operation_log (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    admin_id BIGINT NOT NULL,
+    admin_name VARCHAR(50),
+    action VARCHAR(30),
+    target VARCHAR(200),
+    detail VARCHAR(500),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_admin (admin_id),
+    KEY idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

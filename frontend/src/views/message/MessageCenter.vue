@@ -86,7 +86,7 @@
                 <div v-for="conv in filteredConvs" :key="conv.userId" class="conv-item"
                   :class="{ active: activeConv?.userId === conv.userId, unread: conv.unreadCount > 0 }"
                   @click="openConversation(conv)">
-                  <el-avatar :size="44" :src="conv.avatar">{{ conv.nickname?.charAt(0) }}</el-avatar>
+                  <el-avatar :size="44" :src="conv.avatar" class="clickable-avatar" @click.stop="goToUser(conv.userId)">{{ conv.nickname?.charAt(0) }}</el-avatar>
                   <div class="conv-body">
                     <div class="conv-top">
                       <span class="conv-name">{{ conv.nickname }}</span>
@@ -109,7 +109,7 @@
             <div class="chat-main">
               <template v-if="activeConv">
                 <div class="chat-header">
-                  <el-avatar :size="38" :src="activeConv.avatar">{{ activeConv.nickname?.charAt(0) }}</el-avatar>
+                  <el-avatar :size="38" :src="activeConv.avatar" class="clickable-avatar" @click.stop="goToUser(activeConv.userId)">{{ activeConv.nickname?.charAt(0) }}</el-avatar>
                   <div class="ch-info">
                     <span class="ch-name">{{ activeConv.nickname }}</span>
                   </div>
@@ -117,7 +117,7 @@
                 <div class="chat-messages" ref="chatMsgRef">
                   <div v-for="(msg, idx) in chatMessages" :key="msg.id" class="chat-msg"
                     :class="msg.senderId === currentUserId ? 'msg-mine' : 'msg-other'">
-                    <el-avatar v-if="msg.senderId !== currentUserId" :size="30" :src="activeConv.avatar" class="msg-avatar">
+                    <el-avatar v-if="msg.senderId !== currentUserId" :size="30" :src="activeConv.avatar" class="msg-avatar clickable-avatar" @click.stop="goToUser(activeConv.userId)">
                       {{ activeConv.nickname?.charAt(0) }}
                     </el-avatar>
                     <div class="msg-bubble">
@@ -304,12 +304,8 @@ function iconClass(t) {
   return ''
 }
 function formatNotifTime(t) {
-  if (!t) return ''
-  const d = new Date(t), now = new Date()
-  const diff = now - d
-  if (diff < 3600000) return Math.floor(diff/60000) + ' 分钟前'
-  if (diff < 86400000) return Math.floor(diff/3600000) + ' 小时前'
-  return (d.getMonth()+1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0')
+  if (!t) return ''; const d = new Date(t)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 async function fetchNotifications() {
@@ -390,6 +386,8 @@ async function sendChat() {
   } catch { /* ignore */ }
   finally { chatSending.value = false }
 }
+function goToUser(id) { router.push('/user/' + id) }
+
 function formatConvTime(t) {
   if (!t) return ''
   const d = new Date(t), now = new Date()
@@ -528,6 +526,12 @@ onMounted(async () => {
   text-align: center; padding: 60px 20px;
   p { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 12px 0 4px; }
   span { font-size: 13px; color: #b0b8c4; }
+}
+
+.clickable-avatar {
+  cursor: pointer;
+  transition: transform 0.2s;
+  &:hover { transform: scale(1.1); }
 }
 
 @media (max-width: 768px) {

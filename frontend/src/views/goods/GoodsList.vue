@@ -79,7 +79,7 @@
               <span class="gc-views">👁 {{ item.viewCount || 0 }}</span>
             </div>
             <div class="gc-foot">
-              <span class="gc-user">{{ item.userNickname || '匿名用户' }}</span>
+              <span class="gc-user">{{ item.userNickname || '匿名用户' }} · {{ formatTime(item.createdAt) }}</span>
             </div>
           </div>
         </div>
@@ -119,6 +119,7 @@ const total = ref(0)
 const loading = ref(false)
 
 function tagLabel(t) { const m = { sell: '出售', borrow: '借用', gift: '赠送', exchange: '交换' }; return m[t] || t }
+import { formatTime } from '@/utils/date'
 function getFirstImage(imgs) { if (Array.isArray(imgs)) return imgs[0]; return imgs?.split(',')[0] || '' }
 
 async function loadList() {

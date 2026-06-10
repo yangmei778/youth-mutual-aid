@@ -2,35 +2,35 @@
   <div class="admin-dashboard page-container">
     <h2 style="margin-bottom: 20px">管理看板</h2>
 
-    <!-- 第一行：核心统计 -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :xs="12" :sm="6" v-for="card in topCards" :key="card.label">
-        <el-card shadow="hover" class="stat-card" :class="{ clickable: card.link }" @click="card.link && $router.push(card.link)">
-          <el-statistic :title="card.label" :value="card.value">
-            <template #prefix>
-              <el-icon :size="20" :color="card.color"><component :is="card.icon" /></el-icon>
-            </template>
-          </el-statistic>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 统计卡片 2行4列 -->
+    <div class="stats-grid">
+      <div v-for="card in allCards" :key="card.label" class="stat-card" :class="{ clickable: card.link, alert: card.isAlert && card.value > 0 }" @click="card.link && $router.push(card.link)">
+        <div class="sc-icon" :style="{ color: card.color }">
+          <el-icon :size="20"><component :is="card.icon" /></el-icon>
+        </div>
+        <div class="sc-body">
+          <span class="sc-value" :class="{ 'val-danger': card.isAlert && card.value > 0 }">{{ card.value }}</span>
+          <span class="sc-label">{{ card.label }}</span>
+        </div>
+        <span v-if="card.isAlert && card.value > 0" class="sc-badge">{{ card.value }}</span>
+      </div>
+    </div>
 
-    <!-- 第二行：扩展统计 -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :xs="12" :sm="6" v-for="card in bottomCards" :key="card.label">
-        <el-card shadow="hover" class="stat-card stat-card-sm">
-          <div class="mini-stat">
-            <el-icon :size="18" :color="card.color"><component :is="card.icon" /></el-icon>
-            <div class="mini-stat-body">
-              <span class="mini-stat-value">{{ card.value }}</span>
-              <span class="mini-stat-label">{{ card.label }}</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 第三行：操作日志 -->
+    <el-card shadow="hover" class="chart-card">
+      <template #header><span>最近操作日志</span></template>
+      <div class="log-list" v-if="logs.length">
+        <div v-for="l in logs" :key="l.id" class="log-item">
+          <span class="log-action" :class="'act-'+l.action">{{ actionLabel(l.action) }}</span>
+          <span class="log-target">{{ l.target }}</span>
+          <span class="log-admin">{{ l.adminName }}</span>
+          <span class="log-time">{{ formatLogTime(l.createdAt) }}</span>
+        </div>
+      </div>
+      <div v-else class="empty-tip">暂无操作记录</div>
+    </el-card>
 
-    <!-- 第三行：图表 -->
+    <!-- 图表 -->
     <el-row :gutter="16">
       <el-col :xs="24" :md="12">
         <el-card shadow="hover" class="chart-card">
@@ -55,7 +55,13 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User, Cpu, Box, Calendar, Connection, Warning, WarningFilled, Plus, DataAnalysis } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
+import request from '@/utils/request'
 import * as echarts from 'echarts'
+
+const logs = ref([])
+function actionLabel(a) { const m={ban_user:'封禁用户',unban_user:'解封用户',offline_post:'下架内容',delete_post:'删除内容',handle_report:'处理举报',adjust_credit:'调整信用'}; return m[a]||a }
+function formatLogTime(t) { if(!t)return''; const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
+async function fetchLogs() { try { const r = await request.get('/v1/admin/logs'); logs.value = r.data?.data || r.data || [] } catch {} }
 
 const stats = ref({
   userCount: 0,
@@ -74,19 +80,15 @@ const stats = ref({
 const hasCategoryData = computed(() => stats.value.categoryDistribution?.length > 0)
 const hasTrendData = computed(() => stats.value.dailyTrend?.length > 0)
 
-const topCards = computed(() => [
+const allCards = computed(() => [
   { label: '用户总数', value: stats.value.userCount, icon: User, color: '#409EFF', link: '/admin/users' },
-  { label: '技能数量', value: stats.value.skillCount, icon: Cpu, color: '#67C23A', link: '/admin/audit' },
-  { label: '物品数量', value: stats.value.goodsCount, icon: Box, color: '#E6A23C', link: '/admin/audit' },
-  { label: '活动数量', value: stats.value.activityCount, icon: Calendar, color: '#F56C6C', link: '/admin/audit' },
-])
-
-const bottomCards = computed(() => [
+  { label: '技能数量', value: stats.value.skillCount, icon: Cpu, color: '#409EFF', link: '/admin/audit' },
+  { label: '物品数量', value: stats.value.goodsCount, icon: Box, color: '#67C23A', link: '/admin/audit' },
+  { label: '活动数量', value: stats.value.activityCount, icon: Calendar, color: '#E6A23C', link: '/admin/audit' },
   { label: '互助记录', value: stats.value.mutualRecordCount, icon: Connection, color: '#409EFF' },
-  { label: '待审核报名', value: stats.value.pendingAuditCount, icon: Warning, color: '#E6A23C', link: '/admin/audit' },
-  { label: '待处理举报', value: stats.value.pendingReportCount, icon: WarningFilled, color: '#F56C6C', link: '/admin/reports' },
+  { label: '待审核报名', value: stats.value.pendingAuditCount, icon: Warning, color: '#E6A23C', link: '/admin/audit', isAlert: true },
+  { label: '待处理举报', value: stats.value.pendingReportCount, icon: WarningFilled, color: '#F56C6C', link: '/admin/reports', isAlert: true },
   { label: '近7天新增用户', value: stats.value.recentUsers, icon: Plus, color: '#67C23A', link: '/admin/users' },
-  { label: '近30天活跃用户', value: stats.value.activeUsers, icon: DataAnalysis, color: '#9B59B6' },
 ])
 
 // ====== ECharts ======
@@ -151,60 +153,42 @@ function handleResize() {
 
 onMounted(() => {
   fetchStats()
+  fetchLogs()
   window.addEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
-.stat-row {
-  margin-bottom: 16px;
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+
+.stat-card { position: relative; background: #fff; border: 1px solid #edf0f4; border-radius: 14px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s;
+  &.clickable { cursor: pointer; &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); } }
+  &.alert { border-color: #fbc4c4; background: #fefafa; }
 }
 
-.stat-card {
-  margin-bottom: 12px;
+.sc-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(64,158,255,0.06); flex-shrink: 0; }
+.sc-body { min-width: 0; }
+.sc-value { display: block; font-size: 24px; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.sc-value.val-danger { color: #f56c6c; }
+.sc-label { font-size: 12px; color: #909399; }
+.sc-badge { position: absolute; top: -6px; right: -6px; background: #f56c6c; color: #fff; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 9px; padding: 0 4px; }
 
-  :deep(.el-statistic__head) {
-    font-size: 14px;
-    color: #909399;
-  }
+.chart-card { margin-bottom: 16px; }
+.chart-container { width: 100%; height: 320px; }
 
-  :deep(.el-statistic__content) {
-    font-size: 24px;
-  }
+.log-list { max-height: 300px; overflow-y: auto; }
+.log-item { display: flex; gap: 14px; padding: 10px 0; font-size: 13px; align-items: center; &+& { border-top: 1px solid #f5f6f8; } }
+.log-action { padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  &.act-ban_user,&.act-delete_post { background: #fef0f0; color: #f56c6c; }
+  &.act-unban_user { background: #f0f9eb; color: #67c23a; }
+  &.act-offline_post,&.act-adjust_credit { background: #fef9e7; color: #e6a23c; }
+  &.act-handle_report { background: rgba(64,158,255,0.08); color: #409eff; }
 }
+.log-target { flex: 1; color: var(--text-primary); }
+.log-admin { color: #909399; white-space: nowrap; }
+.log-time { color: #b0b8c4; font-size: 12px; white-space: nowrap; }
+.empty-tip { text-align: center; padding: 32px; color: #b0b8c4; font-size: 13px; }
 
-.stat-card-sm :deep(.el-card__body) {
-  padding: 16px;
-}
-
-.mini-stat {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.mini-stat-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.mini-stat-value {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.mini-stat-label {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.chart-card {
-  margin-bottom: 16px;
-}
-
-.chart-container {
-  width: 100%;
-  height: 320px;
-}
+@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
 </style>

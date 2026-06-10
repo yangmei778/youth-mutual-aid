@@ -131,8 +131,10 @@
             <div class="bc-shimmer"></div>
           </div>
         </div>
-        <div class="load-more" v-if="hasMore">
-          <el-button round plain @click="loadMore">查看更多 <el-icon><ArrowDown /></el-icon></el-button>
+        <div class="load-more" v-if="bentoItems.length > 4">
+          <el-button round plain @click="loadMore">
+            {{ pageSize > 4 ? '收起' : '查看更多' }} <el-icon><ArrowDown /></el-icon>
+          </el-button>
         </div>
       </template>
       <div v-else-if="!dataLoading" class="empty-wide">
@@ -158,9 +160,9 @@
           </div>
         </div>
       </div>
-      <div class="load-more" v-if="feed.length > feedShowCount">
-        <el-button round plain @click="feedShowCount = Math.min(feedShowCount + 8, feed.length)">
-          展开更多 <el-icon><ArrowDown /></el-icon>
+      <div class="load-more" v-if="feed.length > 4">
+        <el-button round plain @click="feedShowCount = feedShowCount > 4 ? 4 : Math.min(feedShowCount + 8, feed.length)">
+          {{ feedShowCount > 4 ? '收起' : '展开更多' }} <el-icon><ArrowDown /></el-icon>
         </el-button>
       </div>
     </section>
@@ -171,6 +173,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { skillApi, activityApi, goodsApi, communityApi } from '@/api'
 import { ArrowRight, ArrowDown } from '@element-plus/icons-vue'
+import { formatTime } from '@/utils/date'
 
 const latestSkills = ref([])
 const latestGoods = ref([])
@@ -235,21 +238,18 @@ function formatDate(d) {
   const n=new Date(),t=new Date(d),diff=n-t
   if (diff<86400000) return '今天'; if (diff<172800000) return '昨天'
   if (diff<604800000) return Math.floor(diff/86400000)+'天前'
-  return `${t.getMonth()+1}月${t.getDate()}日`
+  return formatTime(t)
 }
 function formatFeedTime(t) {
   if (!t) return ''; const d=new Date(t),n=new Date(),diff=n-d
   if (diff<3600000) return Math.floor(diff/60000)+'分钟前'
   if (diff<86400000) return Math.floor(diff/3600000)+'小时前'
-  return `${d.getMonth()+1}月${d.getDate()}日`
+  return formatTime(d)
 }
 
 function loadMore() {
-  pageSize.value += 4
-  if (bentoItems.value.length < pageSize.value) {
-    hasMore.value = false
-    pageSize.value = bentoItems.value.length
-  }
+  if (pageSize.value > 4) { pageSize.value = 4; hasMore.value = true }  // 收起
+  else { pageSize.value += 4; if (bentoItems.value.length < pageSize.value) { hasMore.value = false; pageSize.value = bentoItems.value.length } }
 }
 
 onMounted(async () => {

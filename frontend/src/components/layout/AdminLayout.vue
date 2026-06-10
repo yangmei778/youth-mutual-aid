@@ -34,6 +34,10 @@
             <span>举报管理</span>
             <el-badge :value="reportBadge" :hidden="!reportBadge" class="menu-badge" />
           </el-menu-item>
+          <el-menu-item index="/admin/logs">
+            <el-icon><Document /></el-icon>
+            <span>操作日志</span>
+          </el-menu-item>
           <el-menu-item index="/admin/config">
             <el-icon><Setting /></el-icon>
             <span>系统配置</span>
@@ -56,7 +60,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { DataAnalysis, User, DocumentChecked, Trophy, Connection, WarningFilled, Setting } from '@element-plus/icons-vue'
+import { DataAnalysis, User, DocumentChecked, Trophy, Connection, WarningFilled, Setting, Document } from '@element-plus/icons-vue'
 
 import { ref, onMounted } from 'vue'
 
@@ -82,6 +86,10 @@ onMounted(() => { fetchReportBadge(); setInterval(fetchReportBadge, 30000) })
 
 .admin-aside {
   background-color: #304156;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 
   .admin-logo {
     height: 60px;
@@ -93,6 +101,13 @@ onMounted(() => { fetchReportBadge(); setInterval(fetchReportBadge, 30000) })
     font-size: 16px;
     font-weight: 600;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+  }
+
+  :deep(.el-menu) {
+    flex: 1;
+    border-right: none;
+    overflow-y: auto;
   }
 }
 

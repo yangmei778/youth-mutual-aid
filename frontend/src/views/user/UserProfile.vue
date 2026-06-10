@@ -183,7 +183,8 @@ const teachTags = computed(() => skillTags.value.filter(t => t.type === 'teach')
 const learnTags = computed(() => skillTags.value.filter(t => t.type === 'learn'))
 
 function genderLabel(g) { const m={0:'保密',1:'男',2:'女'}; return m[g]||'' }
-function formatDate(d) { if(!d) return ''; const t=new Date(d); return `${t.getMonth()+1}月${t.getDate()}日` }
+import { formatTime } from '@/utils/date'
+function formatDate(d) { return formatTime(d) }
 function postTagClass(p) {
   if (p.type==='teach') return 'type-teach'; if (p.type==='learn') return 'type-learn'
   if (p.exchangeType) return 'type-goods'; return 'type-activity'

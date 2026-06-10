@@ -147,6 +147,12 @@ const routes = [
         meta: { title: '举报管理' },
       },
       {
+        path: 'logs',
+        name: 'AdminLogs',
+        component: () => import('@/views/admin/OperationLog.vue'),
+        meta: { title: '操作日志' },
+      },
+      {
         path: 'config',
         name: 'AdminConfig',
         component: () => import('@/views/admin/SystemConfig.vue'),
